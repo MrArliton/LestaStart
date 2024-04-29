@@ -2,71 +2,123 @@
 #include "BaseWeapon.h"
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
+#include "Net/UnrealNetwork.h"
 #include "LestaStart/Core/LestaCharacter.h"
 
 
 ABaseWeapon::ABaseWeapon() 
-{
+{	
+	// Replication 
+	bReplicates = true;
+	NetUpdateFrequency = 10;
+	SetReplicateMovement(true);
+
 	Mesh = CreateDefaultSubobject<USkeletalMeshComponent>(TEXT("Skeletal Mesh"));
+	Mesh->SetIsReplicated(true);
 	this->SetRootComponent(Mesh);
 }
-/** When binding actions, be sure to add a handle using AddBindingHandle */
-void ABaseWeapon::AttachWeapon(ALestaCharacter* Character, FName SocketName)
+
+void ABaseWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ABaseWeapon, IsActive);
+}
+
+void ABaseWeapon::AttachWeapon(ALestaCharacter* Character, FName SocketName)
+{	
 	if (!IsValid(Character))
 	{
 		UE_LOG(LogTemp, Error, TEXT("Cannot attach weapon to character, character is invalid, object: %s"), *this->GetName());
 		return;
 	}
-	OwnerCharacter = Character;
-	
-	/** Attach weapon to character */
-	FAttachmentTransformRules AttachmentTransformRules(EAttachmentRule::SnapToTarget, true);
-	this->AttachToComponent(Character->GetMesh(), AttachmentTransformRules, SocketName);
+	// Need for correct working rpc
+	SetOwner(Character);
 
-	/** For Special mapping context */
-	if (InputMappingContext)
+	SetActorEnableCollision(false);	
+
+	if (HasAuthority())
 	{
-		if (APlayerController* Controller = Cast<APlayerController>(Character->GetController()))
+		/** Attach weapon to character */
+		FAttachmentTransformRules AttachmentTransformRules(EAttachmentRule::SnapToTarget, true);
+		this->AttachToComponent(Character->GetMesh(), AttachmentTransformRules, SocketName);
+	}
+}
+
+void ABaseWeapon::PreDetachWeapon()
+{
+	SetActorEnableCollision(true);
+}
+
+void ABaseWeapon::DetachWeapon(bool AutoDestoy)
+{
+	// Call this function before detach logic
+	PreDetachWeapon();
+
+	SetOwner(nullptr);
+
+	if (HasAuthority())
+	{
+		if (AutoDestoy)
 		{
-			if (UEnhancedInputLocalPlayerSubsystem* InputSubsystem = ULocalPlayer::GetSubsystem<UEnhancedInputLocalPlayerSubsystem>(Controller->GetLocalPlayer()))
-			{
-				/** Set priority 1 due to possible click overlap */
-				InputSubsystem->AddMappingContext(InputMappingContext, MappingPriority);
-			}
+			Destroy();
+		}
+		else
+		{
+			FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
+			DetachFromActor(DetachRules);
 		}
 	}
 }
-void ABaseWeapon::Detach()
+
+void ABaseWeapon::SetupInputComponent(UInputComponent* NewInputComponent)
 {
-	FDetachmentTransformRules DetachRules(EDetachmentRule::KeepWorld, true);
-	this->DetachFromActor(DetachRules);
-	if (IsValid(OwnerCharacter))
+	// Clear old input component and setup new 
+	ClearInputComponent();
+	InputComponent = NewInputComponent;
+}
+
+void ABaseWeapon::ClearInputComponent()
+{
+	if (IsValid(InputComponent))
 	{
-		if (APlayerController* Controller = Cast<APlayerController>(OwnerCharacter->GetController()))
+		/** Remove bindings in the input component */
+		UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(InputComponent);
+		if (EIC)
 		{
-			/** Remove bindings in the input component */
-			UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(Controller->InputComponent);
-			if (EIC)
-			{
-				EIC->ClearBindingsForObject(this);
-			}
+			EIC->ClearBindingsForObject(this);
 		}
 	}
+	InputComponent = nullptr;
+
 }
 
 /** Resumes response to input */
 void ABaseWeapon::Activate()
 {
-	IsActive = true;
-	this->SetActorHiddenInGame(false);
+	if (IsValid(Mesh))
+	{
+		Mesh->SetVisibility(true);
+	}
+	if (HasAuthority())
+	{
+		IsActive = true;
+	}
 }
 
+
 /** Blocks response to input */
-void ABaseWeapon::Deactivate(bool HideActor) 
+void ABaseWeapon::Deactivate(bool IsVisible)
 {
-	IsActive = false;
-	this->SetActorHiddenInGame(HideActor);
+	if (IsValid(Mesh))
+	{
+		GetMesh()->SetVisibility(IsVisible);
+	}
+
+	if (HasAuthority())
+	{
+		IsActive = false;
+	}
 }
 
 

@@ -3,12 +3,15 @@
 #include "LestaCharacter.h"
 #include "EnhancedInputComponent.h"
 #include "Camera/CameraComponent.h"
+#include "Net/UnrealNetwork.h"
 #include "Blueprint/UserWidget.h" 
 #include "../Components/Attributes/LivingAttributeComponent.h"
 
 ALestaCharacter::ALestaCharacter()
 {
 	NetUpdateFrequency = 10.f;
+	bReplicates = true;
+	SetReplicateMovement(true);
 
 	USkeletalMeshComponent* SkeletalMesh = GetMesh();
 
@@ -20,63 +23,80 @@ ALestaCharacter::ALestaCharacter()
 		CameraComponent->SetupAttachment(SkeletalMesh);
 	}
 
-	// Living Attribute Component - Functional components
+	// Replicated Living Attribute Component
 	LivingAttributeComponent = CreateDefaultSubobject<ULivingAttributeComponent>(TEXT("LivingAttribute"));
-	// Events 
-	LivingAttributeComponent->OnDeath.AddDynamic(this, &ALestaCharacter::OnDeath);
-	
+	if (LivingAttributeComponent)
+	{
+		LivingAttributeComponent->SetIsReplicated(true);
+		LivingAttributeComponent->OnDeath.AddDynamic(this, &ALestaCharacter::OnDeath);
+	}
 	this->OnTakeAnyDamage.AddDynamic(this, &ALestaCharacter::OnDamagedAny);
+}
+
+void  ALestaCharacter::Tick(float DeltaTime)
+{
+	SetRemoteViewPitch(GetControlRotation().Pitch);
+
 }
 
 void ALestaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-	UWorld* World = GetWorld();
-	if (!World)
-	{
-		return;
-	}
 
-	for (TSubclassOf<ABaseWeapon> WeaponClass : WeaponClasses)
+	if (GetRemoteRole() < ROLE_Authority)
 	{
-		if (WeaponClass.Get())
+		UWorld* World = GetWorld();
+		if (!World)
 		{
-			FTransform WeaponSocketTransform = GetMesh()->GetSocketTransform(WeaponSocketName);
-			AActor* Weapon = World->SpawnActor(WeaponClass, &WeaponSocketTransform);
-			CurrentWeapon = Cast<ABaseWeapon>(Weapon);
-			if (IsValid(CurrentWeapon))
+			return;
+		}
+		// Take input component for server local player
+		UInputComponent* PlayerInputComponent = nullptr;
+		APlayerController* PlayerController = Cast<APlayerController>(GetController());
+		if (IsValid(PlayerController)) 
+		{
+			PlayerInputComponent = PlayerController->InputComponent;
+		}
+
+		for (TSubclassOf<ABaseWeapon> WeaponClass : WeaponClasses)
+		{
+			if (WeaponClass.Get())
 			{
-				Weapons.Add(CurrentWeapon);
-				CurrentWeapon->AttachWeapon(this, WeaponSocketName);
-				CurrentWeapon->Deactivate(true);
+				FTransform WeaponSocketTransform = GetMesh()->GetSocketTransform(WeaponSocketName);
+				AActor* Weapon = World->SpawnActor(WeaponClass, &WeaponSocketTransform);
+				CurrentWeapon = Cast<ABaseWeapon>(Weapon);
+				if (IsValid(CurrentWeapon))
+				{
+					Weapons.Add(CurrentWeapon);
+					CurrentWeapon->AttachWeapon(this, WeaponSocketName);
+					CurrentWeapon->SetupInputComponent(PlayerInputComponent);		
+					CurrentWeapon->Deactivate(false);
+				}
+			}
+			/** Activate first weapon */
+			if (!Weapons.IsEmpty())
+			{
+				CurrentWeapon = Weapons[0];
+				CurrentWeapon->Activate();
 			}
 		}
-		if (!Weapons.IsEmpty())
-		{
-			CurrentWeapon = Weapons[0];
-			CurrentWeapon->Activate();
-		}
 	}
 }
 
-void ALestaCharacter::Tick(float DeltaTime)
+void ALestaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	if (IsValid(GetMesh())) 
-	{
-		FRotator Socket = GetMesh()->GetSocketRotation(FName(TEXT("weapon_r")));
-		UE_LOG(LogTemp, Warning, TEXT("Socket: %s"), *Socket.ToString());
-	}
-}
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-void ALestaCharacter::EndPlay(const EEndPlayReason::Type EndPlayReason)
-{
-	Super::EndPlay(EndPlayReason);
+	DOREPLIFETIME(ALestaCharacter, LivingAttributeComponent);
+	DOREPLIFETIME_CONDITION(ALestaCharacter, Weapons, ELifetimeCondition::COND_OwnerOnly)
+	DOREPLIFETIME_CONDITION(ALestaCharacter, CurrentWeaponId, ELifetimeCondition::COND_OwnerOnly)
+	DOREPLIFETIME_CONDITION(ALestaCharacter, CurrentWeapon, ELifetimeCondition::COND_OwnerOnly)
 }
-
 
 void ALestaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComponent)
 {
 	Super::SetupPlayerInputComponent(PlayerInputComponent);
+	InputComponent = PlayerInputComponent;
 
 	UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(PlayerInputComponent);
 	if (EIC) // should validate component because developers can change input component class through Project Settings
@@ -88,8 +108,6 @@ void ALestaCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInputComp
 	}
 	else
 	{
-		// Print error message into log
-		// You can read more here: https://dev.epicgames.com/documentation/en-us/unreal-engine/logging-in-unreal-engine
 		UE_LOG(LogInput, Error, TEXT("Unexpected input component class: %s"), *GetFullNameSafe(PlayerInputComponent))
 	}
 }
@@ -98,13 +116,13 @@ void ALestaCharacter::OnMoveInput(const FInputActionInstance& InputActionInstanc
 {
 	// Controller rotation Yaw determines which direction Character is facing
 	// so MoveForward = along that direction AND MoveRight = to the right of that direction
-
 	const float YawDegree = GetControlRotation().Yaw; // controller rotation Yaw (in degrees)
 	const float YawRadian = FMath::DegreesToRadians(YawDegree); // controller rotation Yaw (in radians)
 	const FVector ForwardDirection = FVector(FMath::Cos(YawRadian), FMath::Sin(YawRadian), 0.f);
 	const FVector RightDirection = FVector(FMath::Cos(YawRadian + UE_HALF_PI), FMath::Sin(YawRadian + UE_HALF_PI), 0.f);
 
 	const FVector2D Input2D = InputActionInstance.GetValue().Get<FVector2D>();
+
 	AddMovementInput(ForwardDirection * Input2D.X + RightDirection * Input2D.Y);
 }
 
@@ -113,61 +131,71 @@ void ALestaCharacter::OnLookInput(const FInputActionInstance& InputActionInstanc
 	const FVector2D Input2D = InputActionInstance.GetValue().Get<FVector2D>();
 	AddControllerYawInput(Input2D.X);
 	AddControllerPitchInput(Input2D.Y);
+	Server_ChangePitch(Input2D.Y);
+		
 }
 
 void ALestaCharacter::OnChangeWeaponInput(const FInputActionInstance& InputActionInstance)
 {
 	/** Cannot change weapon when we attack */
-	if (IsValid(CurrentWeapon) && CurrentWeapon->IsAttacking()) 
+	if (HasAuthority())
 	{
-		return;
+		if (IsValid(CurrentWeapon) && CurrentWeapon->IsAttacking())
+		{
+			return;
+		}
+
+		float Value = InputActionInstance.GetValue().Get<float>();
+
+		if (Value > 0.0f)
+		{
+			CurrentWeaponId++;
+			if (CurrentWeaponId >= Weapons.Num())
+			{
+				CurrentWeaponId = 0;
+			}
+		}
+		else
+		{
+			CurrentWeaponId--;
+			if (CurrentWeaponId < 0)
+			{
+				CurrentWeaponId = Weapons.Num() - 1;
+			}
+		}
+
+		CurrentWeapon->Deactivate(false);
+		CurrentWeapon = Weapons[CurrentWeaponId];
+		CurrentWeapon->Activate();
+		OnChangeWeapon.Broadcast(CurrentWeapon);
 	}
 
-	float Value = InputActionInstance.GetValue().Get<float>();
-
-	if (Value > 0.0f)
-	{
-		CurrentWeaponId++;
-		if (CurrentWeaponId >= Weapons.Num())
-		{
-			CurrentWeaponId = 0;
-		}
-	}
-	else 
-	{
-		CurrentWeaponId--;
-		if (CurrentWeaponId < 0) 
-		{
-			CurrentWeaponId = Weapons.Num()-1;
-		}
-	}
-	CurrentWeapon->Deactivate(true);
-	CurrentWeapon = Weapons[CurrentWeaponId];
-	CurrentWeapon->Activate();
-	OnChangeWeapon.Broadcast(CurrentWeapon);
 }
 void ALestaCharacter::OnChangeWeaponNumberInput(const FInputActionInstance& InputActionInstance)
 {
 	/** Cannot change weapon when we attack */
-	if (IsValid(CurrentWeapon) && CurrentWeapon->IsAttacking())
+	if (HasAuthority())
 	{
-		return;
-	}
+		if (IsValid(CurrentWeapon) && CurrentWeapon->IsAttacking())
+		{
+			return;
+		}
 
-	int32 Value = static_cast<int>(InputActionInstance.GetValue().Get<float>());
-	CurrentWeaponId = Value;
-	if (CurrentWeaponId >= Weapons.Num()) 
-	{
-		CurrentWeaponId = 0;
+		int32 Value = static_cast<int>(InputActionInstance.GetValue().Get<float>());
+		CurrentWeaponId = Value;
+		if (CurrentWeaponId >= Weapons.Num())
+		{
+			CurrentWeaponId = 0;
+		}
+		else if (CurrentWeaponId < 0)
+		{
+			CurrentWeaponId = Weapons.Num() - 1;
+		}
+		CurrentWeapon->Deactivate(false);
+		CurrentWeapon = Weapons[CurrentWeaponId];
+		CurrentWeapon->Activate();
+		OnChangeWeapon.Broadcast(CurrentWeapon);
 	}
-	else if(CurrentWeaponId < 0)
-	{
-		CurrentWeaponId = Weapons.Num() - 1;
-	}
-	CurrentWeapon->Deactivate(true);
-	CurrentWeapon = Weapons[CurrentWeaponId];
-	CurrentWeapon->Activate();
-	OnChangeWeapon.Broadcast(CurrentWeapon);
 }
 
 void ALestaCharacter::OnDamagedAny(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
@@ -177,7 +205,61 @@ void ALestaCharacter::OnDamagedAny(AActor* DamagedActor, float Damage, const cla
 
 void ALestaCharacter::OnDeath()
 {
-	Destroy();
+	if (GetLocalRole() == ROLE_Authority)
+	{
+		for (ABaseWeapon* Weapon : Weapons)
+		{
+			if (IsValid(Weapon))
+			{
+				Weapon->DetachWeapon(true);
+			}
+		}
+		Destroy();
+	}
+}
+
+void ALestaCharacter::Server_ChangePitch_Implementation(float PitchInput)
+{
+	Multicast_ChangePitch(PitchInput);
+}
+
+void ALestaCharacter::Multicast_ChangePitch_Implementation(float PitchInput)
+{
+	AddControllerPitchInput(PitchInput);
+}
+
+void ALestaCharacter::AttachWeapon(ABaseWeapon* Weapon)
+{
+	if(IsValid(Weapon))
+	{
+		Weapons.Add(Weapon);
+		Weapon->AttachWeapon(this, WeaponSocketName);
+		APlayerController* PlayerController = Cast<APlayerController>(GetController());
+
+		if (IsValid(PlayerController))
+		{
+			Weapon->SetupInputComponent(PlayerController->InputComponent);			
+		}
+		Weapon->Deactivate(false);
+	}
+}
+
+void ALestaCharacter::OnRep_Weapons(const TArray<ABaseWeapon*>& OldWeapons)
+{
+	APlayerController* PlayerController = Cast<APlayerController>(GetController());
+
+	if (IsValid(PlayerController))
+	{
+		for (ABaseWeapon* Weapon : Weapons)
+		{
+			// Check that weapon is new in array, and setup input components 
+			if (IsValid(Weapon))
+			{
+				Weapon->SetupInputComponent(PlayerController->InputComponent);
+				Weapon->AttachWeapon(this, WeaponSocketName);
+			}
+		}
+	}
 }
 
 //** Getters *

@@ -1,10 +1,11 @@
-// Fill out your copyright notice in the Description page of Project Settings.
+ // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "LaserWeaponComponent.h"
 #include "Components/ArrowComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
+#include "Net/UnrealNetwork.h"
 
 ULaserWeaponComponent::ULaserWeaponComponent() : UBaseWeaponComponent()
 {
@@ -15,9 +16,17 @@ void ULaserWeaponComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	if (LaserBeam && IsValid(DirectionComponent))
+	// Don't create visual effects on dedicated server
+	if (GetNetMode() != ENetMode::NM_DedicatedServer)
 	{
-		LaserNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(LaserBeam, DirectionComponent, NAME_None, FVector(0.f), FRotator(0.f), EAttachLocation::Type::KeepRelativeOffset, false, false);
+		if (LaserBeam && IsValid(DirectionComponent))
+		{
+			LaserNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(LaserBeam, DirectionComponent, NAME_None, FVector(0.f), FRotator(0.f), EAttachLocation::Type::KeepRelativeOffset, false, false);
+			if (!IsValid(LaserNiagaraComponent))
+			{
+				UE_LOG(LogTemp, Error, TEXT("Cannot spawn LaserNiagaraComponent, object: %s"), *GetName());
+			}
+		}
 	}
 }
 
@@ -31,15 +40,12 @@ void ULaserWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 		return;
 	}
 
-	if (IsAttacking)
+	if (IsAttacking && !IsOverheat)
 	{
 		FHitResult Result;
 		// Damage Logic
 		if (IsValid(DirectionComponent))
 		{
-			// Laser beam distance
-			FVector BeamLength{ 0.0f };
-
 			auto Transform = DirectionComponent->GetComponentTransform();
 			// Start position
 			const FVector StartPosition = Transform.GetLocation();
@@ -53,30 +59,41 @@ void ULaserWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 			// Trace 
 			World->SweepSingleByChannel(Result, StartPosition, EndPostion, FRotator::ZeroRotator.Quaternion(), ECC_Pawn, FCollisionShape::MakeSphere(TraceSphereRadius));
 
-			if (Result.bBlockingHit)
+
+			if (Result.bBlockingHit && GetOwnerRole() == ROLE_Authority)
 			{
 				const float Damage = FMath::Max(0, DeltaTime * BaseDamage * (1 - Result.Distance / AttackDistance)); // Damage depends on distance (Linear)
 				UGameplayStatics::ApplyDamage(Result.GetActor(), Damage, GetWorld()->GetFirstPlayerController(), GetOwner(), nullptr);
 			}
-			// VFX Logic
-			if (IsValid(LaserNiagaraComponent))
-			{			
-				if (Result.bBlockingHit)
+			// Don't create visual effects on dedicated server
+			if (GetNetMode() != ENetMode::NM_DedicatedServer)
+			{
+				// Laser effect
+				FVector BeamLength{ 0.0f };
+				if (IsValid(LaserNiagaraComponent))
 				{
-					BeamLength.X = Result.Distance; // Set the laser length to the distance to the object
-					LaserNiagaraComponent->SetVariableInt(FName(TEXT("SparkEnable")), 1);
+					if (Result.bBlockingHit)
+					{
+						BeamLength.X = Result.Distance; // Set the laser length to the distance to the object
+						LaserNiagaraComponent->SetVariableInt(FName(TEXT("SparkEnable")), 1);
+					}
+					else
+					{
+						BeamLength.X = AttackDistance; // Set the laser length to the attack distance
+						LaserNiagaraComponent->SetVariableInt(FName(TEXT("SparkEnable")), 0);
+					}
+					LaserNiagaraComponent->SetVariableVec3(FName(TEXT("BeamEnd")), BeamLength);
+
+					if (!LaserNiagaraComponent->IsActive())
+					{
+						LaserNiagaraComponent->Activate();
+					}
 				}
-				else
-				{
-					BeamLength.X = AttackDistance; // Set the laser length to the attack distance
-					LaserNiagaraComponent->SetVariableInt(FName(TEXT("SparkEnable")), 0);
-				}
-				LaserNiagaraComponent->SetVariableVec3(FName(TEXT("BeamEnd")), BeamLength);
 			}
 		}
 		else // Direction Component is invalid
 		{
-			EndAttack();
+			Server_EndAttack();
 
 			UE_LOG(LogInput, Error, TEXT("DirectionComponent is undefined for: %s"), *GetFullNameSafe(this));
 		}
@@ -96,6 +113,14 @@ void ULaserWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 	}
 	else
 	{	
+		if (GetNetMode() != ENetMode::NM_DedicatedServer)
+		{
+			if (IsValid(LaserNiagaraComponent))
+			{
+				LaserNiagaraComponent->Deactivate();
+			}
+		}
+
 		if (!IsOverheat)
 		{
 			this->RestoreAmmo(DeltaTime * ChargingSpeed);
@@ -105,33 +130,9 @@ void ULaserWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 
 }
 
-void ULaserWeaponComponent::StartAttack() 
+void ULaserWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	Super::StartAttack();
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	if (IsAttacking)
-	{
-		if (IsValid(LaserNiagaraComponent))
-		{
-			LaserNiagaraComponent->Activate();
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("LaserNiagaraComponent is invalid, object: %s"), *GetName());
-		}
-	}
-}
-
-void ULaserWeaponComponent::EndAttack() 
-{
-	Super::EndAttack();
-
-	if (IsValid(LaserNiagaraComponent)) 
-	{
-		LaserNiagaraComponent->Deactivate();
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("LaserNiagaraComponent is invalid, object: %s"), *GetName());
-	}
+	DOREPLIFETIME(ULaserWeaponComponent, IsOverheat)
 }

@@ -9,57 +9,29 @@
 
 ALaserWeapon::ALaserWeapon()
 {
+	bNetUseOwnerRelevancy = true;
 	/** Indicate the start positions of the laser by using Scene Component */
 	LaserDirectionComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Laser Direction"));
 	LaserDirectionComponent->SetupAttachment(Mesh);
 
 	LaserWeaponComponent = CreateDefaultSubobject<ULaserWeaponComponent>(TEXT("Laser Component"));
 	LaserWeaponComponent->SetDirectionComponent(LaserDirectionComponent);
-                 
-	/** Sound effects */
-	OverheatSoundComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Overheat Sound Effect"));
-	OverheatSoundComponent->bAutoActivate = false;
-	OverheatSoundComponent->SetActive(false);
-	OverheatSoundComponent->SetupAttachment(Mesh);
-	LaserSoundComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Laser Sound Effect"));
-	LaserSoundComponent->bAutoActivate = false;
-	LaserSoundComponent->SetActive(false);
-	LaserSoundComponent->SetupAttachment(Mesh);
-
-	/** Don't attach to component, because we will set location to end of attack laser */
-	SparkSoundComponent = CreateDefaultSubobject<UAudioComponent>(TEXT("Spark Sound Effect"));  
+	LaserWeaponComponent->SetIsReplicated(true);         
 }
 
-void ALaserWeapon::AttachWeapon(ALestaCharacter* Character, FName SocketName)
+void ALaserWeapon::SetupInputComponent(UInputComponent* NewInputComponent)
 {
-	Super::AttachWeapon(Character, SocketName);
+	Super::SetupInputComponent(NewInputComponent);
 
-	if (!IsValid(Character))
+	UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(NewInputComponent);
+	if (EIC)
 	{
-		return;
+		EIC->BindAction(AttackInputAction, ETriggerEvent::Triggered, this, &ThisClass::OnStartAttack);
+		EIC->BindAction(AttackInputAction, ETriggerEvent::Completed, this, &ThisClass::OnEndAttack);
 	}
-	else 
+	else
 	{
-		UE_LOG(LogTemp, Error, TEXT("Cannot attach the laser weapon, character is undefined, object: %s"), *this->GetName());
-	}
-
-	if (APlayerController* Controller = Cast<APlayerController>(Character->GetController())) 
-	{
-		UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(Controller->InputComponent);
-		if (EIC)
-		{
-			//** AddBindingHandle - for unbinding action when detach from character *
-			EIC->BindAction(AttackInputAction, ETriggerEvent::Triggered, this, &ThisClass::OnStartAttack).GetHandle();			
-			EIC->BindAction(AttackInputAction, ETriggerEvent::Completed, this, &ThisClass::OnEndAttack).GetHandle();			
-		}
-		else 
-		{
-			UE_LOG(LogTemp, Error, TEXT("Cannot attach the laser weapon, error in getting UEnhancedInputComponent, object: %s"), *this->GetName());
-		}
-	}
-	else 
-	{
-		UE_LOG(LogTemp, Error, TEXT("Cannot attach the laser weapon, error in getting APlayerController, object: %s"), *this->GetName());
+		UE_LOG(LogTemp, Error, TEXT("Cannot attach the laser weapon, error in getting UEnhancedInputComponent, object: %s"), *this->GetName());
 	}
 }
 
@@ -76,27 +48,17 @@ void ALaserWeapon::OnStartAttack(const FInputActionInstance& InputActionInstance
 {
 	if (IsActive)
 	{
-		if (!LaserWeaponComponent->IsAttack())
+		if (IsValid(LaserWeaponComponent) && !LaserWeaponComponent->IsAttack())
 		{
 			LaserWeaponComponent->StartAttack();
-			if (LaserWeaponComponent->IsAttack())
-			{
-				LaserSoundComponent->FadeIn(0.5f);
-			}
 		}
 	}
 }
 
 void ALaserWeapon::OnEndAttack(const FInputActionInstance& InputActionInstance)
 {
-	if (IsActive)
+	if (IsValid(LaserWeaponComponent) && IsActive)
 	{
-		LaserSoundComponent->FadeOut(0.5f, 0.0f);
 		LaserWeaponComponent->EndAttack();
 	}
-}
-
-ULaserWeaponComponent* ALaserWeapon::GetLaserWeaponComponent()
-{
-	return LaserWeaponComponent;
 }

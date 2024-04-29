@@ -23,20 +23,42 @@ public:
 protected:
 	virtual void BeginPlay() override;
 
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	
+	UFUNCTION()
+	void OnRep_Ammo();
+
+	UPROPERTY(Replicated, ReplicatedUsing = OnRep_Ammo)
 	float Ammo;	
+	
 	void ConsumeAmmo(float Amount);
 	void RestoreAmmo(float Amount);
 
+	/** React on change IsAttacking */
+	UFUNCTION()
+	virtual void OnRep_IsAttacking();
+
+	UPROPERTY(Replicated, ReplicatedUsing = OnRep_IsAttacking)
 	bool IsAttacking = false;
 
 public:	
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
-	virtual void StartAttack();
-	virtual void EndAttack();
-
 	UFUNCTION(BlueprintCallable, Category = "BaseWeapon")
 	virtual bool IsAttack();
+
+	/** Call RPC to server for starting attack 
+	* @param StartLocaly - start attack locally for showing effects  */
+	virtual void StartAttack(bool StartLocaly = true);
+	/** Call RPC to server for end attack
+	* @param EndLocaly - end attack locally for showing effects  */
+	virtual void EndAttack(bool EndLocaly = true);
+
+	UFUNCTION(Server, Unreliable)
+	virtual void Server_StartAttack();
+
+	UFUNCTION(Server, Unreliable)
+	virtual void Server_EndAttack();
 
 	UPROPERTY(BlueprintAssignable, Category = "BaseWeapon")
 	FWeaponDelegateOne OnChangeAmmo;

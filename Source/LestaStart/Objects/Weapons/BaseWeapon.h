@@ -13,42 +13,50 @@ UCLASS()
 class LESTASTART_API ABaseWeapon : public AActor
 {
 	GENERATED_BODY()
-	
+
 public:
 	ABaseWeapon();
 
-	//** Attach weapon to Character mesh (to socket "SocketName") and give input controll to weapon */
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	/** Attach weapon to Character mesh (to socket "SocketName") */
 	virtual void AttachWeapon(ALestaCharacter* Character, FName SocketName);
-	//** Deattach weapon from Character mesh and take away input controll from weapon */
-	virtual void Detach();
+
+	/** Deattach weapon from Character mesh 
+	 * "AutoDestoy" - Set destroy weapon after detach */
+	virtual void DetachWeapon(bool AutoDestoy = false);	
+
+	/** Assign key bindings for weapon to new input component */
+	virtual void SetupInputComponent(UInputComponent* NewInputComponent);
+	/** Remove key bindings for weapon from input component */
+	virtual void ClearInputComponent();
+
+	/** Resumes response to input, make visible weapon (if it were hidden) */
+	virtual void Activate();
+	/** Blocks response to input
+	* IsVisible - Make the weapon visible or invisible when disabled. */
+	virtual void Deactivate(bool IsVisible = false);
 
 	/** Override this function in inherited classes.
 	 *  Default return false */
 	virtual bool IsAttacking();
 
-	/** Resumes response to input and unhide actor (if he was hidden) */
-	virtual void Activate();
-	/** Blocks response to input */
-	virtual void Deactivate(bool HideActor = false);
-
 	virtual bool IsActivated();
-
+	
 	USkeletalMeshComponent* GetMesh();
+
+protected:
+	/** Automatically call by "DetachWeapon" method before "detach logic"  */
+	virtual void PreDetachWeapon();
 
 protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	USkeletalMeshComponent* Mesh;
 
-	/** Actor who owns weapon after attaching */
-	ALestaCharacter* OwnerCharacter;
-
-	/** Input mapping context */
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Input")
-	UInputMappingContext* InputMappingContext;
-
-	/** Input mapping priority */
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Input", meta = (ClampMin = "0"))
-	int32 MappingPriority = 1;
+	/** InputComponent that controll weapon after attaching */
+	UInputComponent* InputComponent;
 
 	/** Use it in inherited classes to block player input. */
-	bool IsActive = false;};
+	UPROPERTY(Replicated)
+	bool IsActive = false;
+};

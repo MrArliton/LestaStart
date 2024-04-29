@@ -2,10 +2,12 @@
 
 
 #include "LivingAttributeComponent.h"
+#include "Net/UnrealNetwork.h"
 
 // Sets default values for this component's properties
 ULivingAttributeComponent::ULivingAttributeComponent()
 {
+	SetIsReplicatedByDefault(false);
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
@@ -27,48 +29,68 @@ void ULivingAttributeComponent::TickComponent(float DeltaTime, ELevelTick TickTy
 	// ...
 }
 
-
-void ULivingAttributeComponent::Heal(float Value)
+void ULivingAttributeComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {
-	Health = FMath::Clamp(Health + Value, 0, MaxHealth);
-	if (!IsDeath)
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+	
+	DOREPLIFETIME(ULivingAttributeComponent, Health);
+}
+
+void  ULivingAttributeComponent::OnRep_Health()
+{
+	OnChangeHealth.Broadcast(Health);
+	if (Health <= 0.0f) 
 	{
-		OnChangeHealth.Broadcast(Health);
-	}
-	if (Value > 0.0f) // Character is now alive
-	{
-		IsDeath = false;
+		OnDeath.Broadcast();
 	}
 }
 
+void ULivingAttributeComponent::Heal(float Value)
+{
+	if (GetOwnerRole() == ROLE_Authority)
+	{
+		Health = FMath::Clamp(Health + Value, 0, MaxHealth);
+		if (!IsDeath)
+		{
+			OnChangeHealth.Broadcast(Health);
+		}
+		if (Value > 0.0f) /** Character is now alive */
+		{
+			IsDeath = false;
+		}
+	}
+}
 
 void ULivingAttributeComponent::Damage(float Value)
 {
-	Health = FMath::Clamp(Health - Value, 0, MaxHealth);
-	if (!IsDeath)
+	if (GetOwnerRole() == ROLE_Authority)
 	{
-		OnChangeHealth.Broadcast(Health);
-		if (Health == 0)
+		Health = FMath::Clamp(Health - Value, 0, MaxHealth);
+		if (!IsDeath)
 		{
-			OnDeath.Broadcast();
-			IsDeath = true;
+			OnChangeHealth.Broadcast(Health);
+			if (Health == 0)
+			{
+				OnDeath.Broadcast();
+				IsDeath = true;
+			}
 		}
 	}
 }
 
 
-bool ULivingAttributeComponent::HealthIsFull()
+bool ULivingAttributeComponent::IsFullHealth() const
 {
 	return Health == MaxHealth;
 }
 
 
-float ULivingAttributeComponent::GetMaxHealth() 
+float ULivingAttributeComponent::GetMaxHealth()  const
 {
 	return MaxHealth;
 }
 
-float ULivingAttributeComponent::GetCurrentHealth() 
+float ULivingAttributeComponent::GetCurrentHealth() const
 {
 	return Health;
 }

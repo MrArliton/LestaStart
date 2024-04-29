@@ -19,53 +19,50 @@ void ABlastWeapon::AttachWeapon(ALestaCharacter* Character, FName SocketName)
 
 	if (!IsValid(Character))
 	{
+		UE_LOG(LogTemp, Error, TEXT("Cannot attach the blast weapon, character is undefined, object: %s"), *this->GetName());
 		return;
 	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("Cannot attach the laser weapon, character is undefined, object: %s"), *this->GetName());
-	}
 
 	if (IsValid(BlastWeaponComponent))
 	{
-		BlastWeaponComponent->AddIgnoreActor(OwnerCharacter);
-	}
-	
-	if (APlayerController* Controller = Cast<APlayerController>(Character->GetController()))
-	{
-		UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(Controller->InputComponent);
-		if (EIC)
-		{
-			//** AddBindingHandle - for unbinding action when detach from character *
-			EIC->BindAction(AttackInputAction, ETriggerEvent::Triggered, this, &ThisClass::OnStartAttack).GetHandle();
-			EIC->BindAction(AttackInputAction, ETriggerEvent::Completed, this, &ThisClass::OnEndAttack).GetHandle();
-		}
-		else
-		{
-			UE_LOG(LogTemp, Error, TEXT("Cannot attach the laser weapon, error in getting UEnhancedInputComponent, object: %s"), *this->GetName());
-		}
-	}
-	else
-	{
-		UE_LOG(LogTemp, Error, TEXT("Cannot attach the laser weapon, error in getting APlayerController, object: %s"), *this->GetName());
-	}
+		BlastWeaponComponent->AddIgnoreActor(Character);
+	}	
 } 
 
-void ABlastWeapon::Detach()
+void ABlastWeapon::PreDetachWeapon()
 {
-	Super::Detach();
+	Super::PreDetachWeapon();
 
 	if (IsValid(BlastWeaponComponent))
 	{
-		BlastWeaponComponent->RemoveIgnoreActor(OwnerCharacter);
+		BlastWeaponComponent->EndAttack();
+		BlastWeaponComponent->RemoveIgnoreActor(GetOwner());
 	}
 }
 
-void ABlastWeapon::Deactivate(bool HideActor)
+void ABlastWeapon::SetupInputComponent(UInputComponent* NewInputComponent)
 {
-	Super::Deactivate(HideActor);
+	Super::SetupInputComponent(NewInputComponent);
 
-	BlastWeaponComponent->EndAttack();
+	UEnhancedInputComponent* EIC = Cast<UEnhancedInputComponent>(NewInputComponent);
+	if (EIC)
+	{
+		EIC->BindAction(AttackInputAction, ETriggerEvent::Triggered, this, &ThisClass::OnStartAttack);
+		EIC->BindAction(AttackInputAction, ETriggerEvent::Completed, this, &ThisClass::OnEndAttack);
+	}
+	else
+	{
+		UE_LOG(LogTemp, Error, TEXT("Cannot attach the laser weapon, error in getting UEnhancedInputComponent, object: %s"), *this->GetName());
+	}
+}
+
+void ABlastWeapon::Deactivate(bool IsVisible)
+{
+	Super::Deactivate(IsVisible);
+	if (IsValid(BlastWeaponComponent))
+	{
+		BlastWeaponComponent->EndAttack();
+	}
 }
 
 
@@ -80,7 +77,7 @@ bool ABlastWeapon::IsAttacking()
 
 void ABlastWeapon::OnStartAttack(const FInputActionInstance& InputActionInstance) 
 {
-	if (IsActive)
+	if (IsActive && IsValid(BlastWeaponComponent))
 	{
 		BlastWeaponComponent->StartAttack();
 	}
@@ -88,7 +85,7 @@ void ABlastWeapon::OnStartAttack(const FInputActionInstance& InputActionInstance
 
 void ABlastWeapon::OnEndAttack(const FInputActionInstance& InputActionInstance) 
 {
-	if (IsActive)
+	if (IsActive && IsValid(BlastWeaponComponent))
 	{
 		BlastWeaponComponent->EndAttack();
 	}

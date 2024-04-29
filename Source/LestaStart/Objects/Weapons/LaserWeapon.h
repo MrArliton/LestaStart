@@ -20,7 +20,7 @@ class LESTASTART_API ALaserWeapon : public ABaseWeapon
 public:
 	ALaserWeapon();
 
-	virtual void AttachWeapon(ALestaCharacter* Character, FName SocketName) override;
+	virtual void SetupInputComponent(UInputComponent* NewInputComponent) override;
 
 	virtual bool IsAttacking() override;
 
@@ -36,18 +36,4 @@ protected:
 	USceneComponent* LaserDirectionComponent;
 	UPROPERTY(EditAnywhere, Category = "Weapon")
 	ULaserWeaponComponent* LaserWeaponComponent;
-	
-	/** The sound of the laser overheat(reloading) */
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Sound")
-	UAudioComponent* OverheatSoundComponent;
-	/** The sound of the laser */
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Sound")
-	UAudioComponent* LaserSoundComponent;
-	/** The sound of a laser hitting an object */
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon|Sound")
-	UAudioComponent* SparkSoundComponent;
-
-	UFUNCTION(BlueprintCallable, Category = "Weapon")
-	ULaserWeaponComponent* GetLaserWeaponComponent();
-
 };

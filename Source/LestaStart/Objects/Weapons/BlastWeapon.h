@@ -22,12 +22,16 @@ public:
 	ABlastWeapon();
 
 	virtual void AttachWeapon(ALestaCharacter* Character, FName SocketName) override;
-	virtual void Detach() override;
 
-	virtual void Deactivate(bool HideActor) override;
+	virtual void SetupInputComponent(UInputComponent* NewInputComponent) override;
+
+	virtual void Deactivate(bool IsVisible = true) override;
 	virtual bool IsAttacking() override;
 
 protected:
+
+	virtual void PreDetachWeapon() override;
+
 	UPROPERTY(EditAnywhere, Category = "Weapon|Input")
 	TObjectPtr<UInputAction> AttackInputAction;
 

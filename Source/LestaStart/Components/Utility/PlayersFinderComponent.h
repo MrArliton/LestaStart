@@ -6,29 +6,46 @@
 #include "Components/ActorComponent.h"
 #include "PlayersFinderComponent.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FFindDelegateOne, AActor*);
+DECLARE_MULTICAST_DELEGATE_OneParam(FFindDelegateOne, APawn*);
+DECLARE_MULTICAST_DELEGATE(FFindDelegate);
 
-UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
+UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class LESTASTART_API UPlayersFinderComponent : public UActorComponent
 {
 	GENERATED_BODY()
 
-public:	
-	// Sets default values for this component's properties
+public:
 	UPlayersFinderComponent();
 
+	/** Checks the player for proximity, line of sight to him (if enabled). */
+	const TSet<APawn*>& SearchPlayers();
+
 protected:
-	// Called when the game starts
 	virtual void BeginPlay() override;
 
-	bool IsFound = false;
-public:	
-	// Called every frame
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	FTimerHandle TimerHandle;
+	void OnTimerSearch();
 
+public:
 	FFindDelegateOne OnFoundPlayer;
-	FFindDelegateOne OnLosePlayer;
-	UPROPERTY(EditDefaultsOnly, Category = "Finder", meta=(ClampMin = "0.0"))
+	FFindDelegateOne OnFoundClosestPlayer;
+	FFindDelegate OnNotFoundPlayers;
+
+	UPROPERTY(EditAnywhere, Category = "Finder")
+	bool bAutoSearch = false;
+
+	UPROPERTY(EditAnywhere, Category = "Finder", meta = (ClampMin = "0.0", Units = "s"))
+	float SearchInterval = 0.0f;
+
+	UPROPERTY(EditAnywhere, Category = "Finder", meta = (ClampMin = "0.0"))
 	float SearchDistance = 1000.0f;
 
+	UPROPERTY(EditAnywhere, Category = "Finder")
+	bool bCheckDirectVisibility = true;
+
+	UPROPERTY(EditAnywhere, Category = "Finder")
+	TEnumAsByte<ECollisionChannel> CollisionChannel;
+
+private:
+	TSet<APawn*> FoundPlayers;
 };

@@ -17,33 +17,40 @@ class LESTASTART_API ULivingAttributeComponent : public UActorComponent
 public:	
 	ULivingAttributeComponent();
 
-private:
-	bool IsDeath = false;
-
-protected:
-	virtual void BeginPlay() override;
-
-	UPROPERTY(BlueprintReadOnly, Category = "Attribute")
-	float Health;
-	UPROPERTY(EditAnywhere, Category = "Attribute", meta = (ClampMin = "0.1"))
-	float MaxHealth = 100.0f;
-
-public:	
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
-	void Heal(float Value);
-	void Damage(float Value);
-
-	bool HealthIsFull();
-
-	UFUNCTION(BlueprintCallable, Category = "Attribute")
-	float GetMaxHealth();
-	UFUNCTION(BlueprintCallable, Category = "Attribute")
-	float GetCurrentHealth();
-
 	UPROPERTY(BlueprintAssignable, Category = "Attribute")
 	FHealthDelegate OnDeath;
 	UPROPERTY(BlueprintAssignable, Category = "Attribute")
 	FHealthDelegateOne OnChangeHealth;
+
+private:
+	bool IsDeath = false;
+
+	UPROPERTY(EditAnywhere, Category = "Attribute", meta = (ClampMin = "0.1"))
+	float MaxHealth = 100.0f;
+
+protected:
+	virtual void BeginPlay() override;
+
+	UPROPERTY(Replicated, ReplicatedUsing=OnRep_Health)
+	float Health;
+
+public:	
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	void Heal(float Value);
+	void Damage(float Value);
+
+	bool IsFullHealth() const;
+	
+	UFUNCTION(BlueprintCallable, Category = "Attribute")
+	float GetMaxHealth() const;
+	
+	UFUNCTION(BlueprintCallable, Category = "Attribute")
+	float GetCurrentHealth() const;
+
+	UFUNCTION()
+	void OnRep_Health();
 
 };

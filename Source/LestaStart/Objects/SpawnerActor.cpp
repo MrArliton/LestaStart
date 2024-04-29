@@ -5,6 +5,9 @@
 
 ASpawnerActor::ASpawnerActor()
 {
+	/** Disable loading on client, because spawner must only be server-side */
+	bNetLoadOnClient = false;
+
 	PrimaryActorTick.bCanEverTick = false;
 	SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 	SetRootComponent(SceneComponent);
@@ -42,10 +45,14 @@ TArray<int32> ASpawnerActor::GetRandomArrayOfIndexes(int32 InMin, int32 InMax, i
 void ASpawnerActor::BeginPlay()
 {
 	Super::BeginPlay();
-	if (bOnBeginSpawn) 
+	if (HasAuthority())
 	{
-		this->Spawn();
-	}	
+		if (bOnBeginSpawn)
+		{
+			this->Spawn();
+		}
+	}
+
 }
 
 void ASpawnerActor::Tick(float DeltaTime)

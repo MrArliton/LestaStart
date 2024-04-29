@@ -21,16 +21,18 @@ class LESTASTART_API ALestaCharacter : public ACharacter
 public:
 	ALestaCharacter();
 
+	virtual void Tick(float DeltaTime) override;
+
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 
-	virtual void Tick(float DeltaTime) override;
+	void AttachWeapon(ABaseWeapon* Weapon);
 
 	UPROPERTY(BlueprintAssignable, Category = "Weapon")
 	FCharacterDelegateOne OnChangeWeapon;
 protected:
 	virtual void BeginPlay() override;
 
-	virtual void EndPlay(const EEndPlayReason::Type EndPlayReason) override;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UCameraComponent> CameraComponent;
@@ -54,6 +56,7 @@ protected:
 	virtual void OnLookInput(const FInputActionInstance& InputActionInstance);
 	virtual void OnChangeWeaponInput(const FInputActionInstance& InputActionInstance);
 	virtual void OnChangeWeaponNumberInput(const FInputActionInstance& InputActionInstance);
+
 	//** Life event functions */
 	UFUNCTION()
 	virtual void OnDamagedAny(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
@@ -65,15 +68,28 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	FName WeaponSocketName;
 
-
+	/** Controll pitch on clients */
+	UFUNCTION(Server, Unreliable)
+	void Server_ChangePitch(float PitchInput);
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_ChangePitch(float PitchInput);
+private:
+	UPROPERTY(Replicated)
 	ABaseWeapon* CurrentWeapon;
+	
+	UFUNCTION()
+	void OnRep_Weapons(const TArray<ABaseWeapon*>& OldWeapons);
+	UPROPERTY(Replicated, ReplicatedUsing = OnRep_Weapons)
+	TArray<ABaseWeapon*> Weapons;
+
+	UPROPERTY(Replicated)
 	int32 CurrentWeaponId = 0;
 
-	TArray<ABaseWeapon*> Weapons;
+	
 public:	
 
 	//** Attributes */
-	UPROPERTY(EditDefaultsOnly, Category = "Attribute")
+	UPROPERTY(Replicated, EditDefaultsOnly, Category = "Attribute")
 	ULivingAttributeComponent* LivingAttributeComponent;
 
 	UFUNCTION(BlueprintCallable, Category = "Attribute")

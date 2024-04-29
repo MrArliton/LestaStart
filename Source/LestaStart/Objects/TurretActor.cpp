@@ -2,6 +2,7 @@
 
 
 #include "TurretActor.h"
+#include "Net/UnrealNetwork.h"
 #include "Components/ArrowComponent.h"
 #include "LestaStart/Components/Weapons/LaserWeaponComponent.h"
 #include "LestaStart/Components/Utility/PlayersFinderComponent.h"
@@ -9,16 +10,30 @@
 
 ATurretActor::ATurretActor() : ALivingMeshActor()
 {
+	// Replication
+	bReplicates = true;
+	NetUpdateFrequency = 10.0f;
+	SetReplicateMovement(true);
+
 	// Weapon
 	LaserComponent = CreateDefaultSubobject<ULaserWeaponComponent>(TEXT("Laser Weapon"));
 	LaserDirectionComponent = CreateDefaultSubobject<USceneComponent>(TEXT("LaserDirection"));
 	LaserDirectionComponent->SetupAttachment(RootComponent);
 	LaserComponent->SetDirectionComponent(LaserDirectionComponent);
-	
+	LaserComponent->SetIsReplicated(true);
 	// Finder Component
 	FinderComponent = CreateDefaultSubobject<UPlayersFinderComponent>("Player Finder Component");
-	FinderComponent->OnFoundPlayer.AddUObject(this, &ATurretActor::OnFoundPlayer);
-	FinderComponent->OnLosePlayer.AddUObject(this, &ATurretActor::OnLosePlayer);
+	FinderComponent->OnFoundClosestPlayer.AddUObject(this, &ATurretActor::OnFoundPlayer);
+	FinderComponent->OnNotFoundPlayers.AddUObject(this, &ATurretActor::OnNotFoundPlayers);
+	FinderComponent->bAutoSearch = true;
+	FinderComponent->SearchInterval = 0.25f;
+}
+
+void ATurretActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(ATurretActor, RotationToPlayer);
 }
 
 void ATurretActor::Tick(float DeltaTime) 
@@ -28,23 +43,29 @@ void ATurretActor::Tick(float DeltaTime)
 	// Smooth turn
 	FRotator ActorRotator = GetActorRotation();
 	float Coef = FMath::Min(1.0f, RotationSpeed * DeltaTime);
-	SetActorRotation(ActorRotator - (ActorRotator - RotationToPlayer) * Coef);
+	SetActorRotation(ActorRotator - (ActorRotator - RotationToPlayer.GetNormalized()) * Coef);
 }
 
-void ATurretActor::OnFoundPlayer(AActor* FoundActor)
+void ATurretActor::OnFoundPlayer(APawn* FoundActor)
 {
-	if (IsValid(FoundActor))
+	if (IsValid(LaserComponent))
 	{
-		RotationToPlayer = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), FoundActor->GetActorLocation());
-		LaserComponent->StartAttack();
+		if (IsValid(FoundActor))
+		{
+			RotationToPlayer = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), FoundActor->GetActorLocation());
+			LaserComponent->StartAttack();
+		}
+		else
+		{
+			LaserComponent->EndAttack();
+		}
 	}
-	else
+}
+
+void ATurretActor::OnNotFoundPlayers()
+{
+	if (IsValid(LaserComponent))
 	{
 		LaserComponent->EndAttack();
 	}
-}
-
-void ATurretActor::OnLosePlayer(AActor* LostActor)
-{
-	LaserComponent->EndAttack();
 }

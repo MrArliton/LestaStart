@@ -3,6 +3,7 @@
 #include "BlastWeaponComponent.h"
 #include "Components/SceneComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "Net/UnrealNetwork.h"
 
 UBlastWeaponComponent::UBlastWeaponComponent() : UBaseWeaponComponent()
 {
@@ -22,15 +23,25 @@ void UBlastWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 		if (IsValid(DirectionComponent) && CurrentPower > 0.0f)
 		{
 
-			AActor* Owner = GetOwner();
 			DrawDebugSphere(GetWorld(), DirectionComponent->GetComponentLocation(), AttackDistance, 20, FColor::Emerald);
-			UGameplayStatics::ApplyRadialDamage(GetWorld(), BaseDamage * CurrentPower,
-				DirectionComponent->GetComponentLocation(),
-				AttackDistance, nullptr, IgnoredActors, Owner, nullptr, false, ECC_Pawn);
+			if (GetOwnerRole() == ROLE_Authority)
+			{
+				AActor* Owner = GetOwner();
+				UGameplayStatics::ApplyRadialDamage(GetWorld(), BaseDamage * CurrentPower,
+					DirectionComponent->GetComponentLocation(),
+					AttackDistance, nullptr, IgnoredActors, Owner, nullptr, false, ECC_Pawn);
 
+			}
 			CurrentPower = 0.0f;
 		}
 	}
+}
+
+void UBlastWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
+
+	DOREPLIFETIME(UBlastWeaponComponent, CurrentPower)
 }
 
 void UBlastWeaponComponent::AddIgnoreActor(AActor* Actor)

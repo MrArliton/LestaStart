@@ -1,64 +1,112 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 
 
 #include "PlayersFinderComponent.h"
 #include "Camera/CameraComponent.h"
 
-// Sets default values for this component's properties
 UPlayersFinderComponent::UPlayersFinderComponent()
 {
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 }
 
 
-// Called when the game starts
 void UPlayersFinderComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
-	// ...
-	
-}
-
-// Called every frame
-void UPlayersFinderComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// For one local player --- In the future for many players ?
-	APawn* PlayerPawn = GetWorld()->GetFirstPlayerController()->GetPawn();
-	AActor* OwnerActor = GetOwner();
-	if (IsValid(PlayerPawn) && IsValid(OwnerActor))
+	if (GetOwnerRole() == ROLE_Authority)
 	{
-		const FVector Start = OwnerActor->GetActorLocation();
-		const FVector End = PlayerPawn->GetActorLocation();
-		// Calculate Distance between Player and OwnerActor 
-		if ((End - Start).Length() < SearchDistance)
-		{
-			FHitResult HitResult;
-			// Trace from this OwnerActor to Player    
-			GetWorld()->LineTraceSingleByChannel(HitResult, OwnerActor->GetActorLocation(), PlayerPawn->GetActorLocation(), ECC_Pawn);
+		UWorld* World = GetWorld();
 
-			AActor* HitActor = HitResult.GetActor();
-			// Only Actors have Camera ? (At least in our game)
-			UCameraComponent* CameraComponent;
-			if(IsValid(HitActor) && IsValid(CameraComponent = HitActor->GetComponentByClass<UCameraComponent>()))
-			{				  
-				OnFoundPlayer.Broadcast(HitActor);
-				IsFound = true;	
-			}
-			else if(IsFound)
-			{
-				OnLosePlayer.Broadcast(HitActor);
-				IsFound = false;
-			}
-		}
-		else if(IsFound)
+		if (World && bAutoSearch)
 		{
-			OnLosePlayer.Broadcast(PlayerPawn);
-			IsFound = false;
+			World->GetTimerManager().SetTimer(TimerHandle, this, &UPlayersFinderComponent::OnTimerSearch, SearchInterval, true);
 		}
-
 	}
 }
 
+void UPlayersFinderComponent::OnTimerSearch()
+{
+	SearchPlayers();
+}
+
+
+const TSet<APawn*>& UPlayersFinderComponent::SearchPlayers()
+{
+	// Preparing
+	FoundPlayers.Empty();
+	UWorld* World = GetWorld();
+	if (!World)
+	{
+		return FoundPlayers;
+	}
+
+	AActor* OwnerActor = GetOwner();
+	if (!IsValid(OwnerActor))
+	{
+		return FoundPlayers;
+	}
+
+	const FVector Start = OwnerActor->GetActorLocation();
+	// For searching closest player 
+	APawn* ClosestPlayer = nullptr;
+	float ClosestPlayerDistance = TNumericLimits<float>::Max();
+	// Search players
+	for (FConstPlayerControllerIterator Iterator = GetWorld()->GetPlayerControllerIterator(); Iterator; ++Iterator)
+	{
+		APlayerController* PlayerController = (*Iterator).Get();
+
+		if (IsValid(PlayerController))
+		{
+			APawn* PlayerPawn = PlayerController->GetPawn();			
+			if (IsValid(PlayerPawn))
+			{
+				const FVector End = PlayerPawn->GetActorLocation();
+				float DistanceToPlayer = (End - Start).Length();
+				/** Check this pawn in the search area */
+				if (DistanceToPlayer < SearchDistance)
+				{
+					if (!bCheckDirectVisibility) // No check trace
+					{
+						FoundPlayers.Add(PlayerPawn);
+						OnFoundPlayer.Broadcast(PlayerPawn);
+						// For search closest player 
+						if (DistanceToPlayer < ClosestPlayerDistance)
+						{
+							ClosestPlayer = PlayerPawn;
+						}
+					}
+					else // Check trace
+					{
+						FHitResult HitResult;
+						// Trace from this owner actor to player 
+						GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, CollisionChannel.GetValue());
+
+						AActor* HitActor = HitResult.GetActor();
+						if (IsValid(HitActor) && (Cast<AActor>(PlayerPawn) == HitActor))
+						{
+							FoundPlayers.Add(PlayerPawn);
+							OnFoundPlayer.Broadcast(PlayerPawn);
+							// For search closest player 
+							if (DistanceToPlayer < ClosestPlayerDistance)
+							{
+								ClosestPlayer = PlayerPawn;
+							}
+						}
+					}
+				}
+			}
+		}
+	}	
+
+	if (ClosestPlayer)
+	{
+		OnFoundClosestPlayer.Broadcast(ClosestPlayer);
+	}
+
+	if (FoundPlayers.IsEmpty()) 
+	{
+		OnNotFoundPlayers.Broadcast();
+	}
+
+	return FoundPlayers;
+}

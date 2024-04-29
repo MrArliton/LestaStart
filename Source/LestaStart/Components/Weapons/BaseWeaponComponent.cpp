@@ -1,15 +1,16 @@
-// Fill out your copyright notice in the Description page of Project Settings.
-
 
 #include "BaseWeaponComponent.h"
+#include "Net/UnrealNetwork.h"
 
 UBaseWeaponComponent::UBaseWeaponComponent()
 {
+	SetIsReplicatedByDefault(true);
+
 	PrimaryComponentTick.bCanEverTick = true;
 }
 
 
-// Called when the game starts
+
 void UBaseWeaponComponent::BeginPlay()
 {
 	Super::BeginPlay();
@@ -17,11 +18,24 @@ void UBaseWeaponComponent::BeginPlay()
 	Ammo = MaxAmmo;
 }
 
+void UBaseWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
+{
+	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-// Called every frame
+	DOREPLIFETIME(UBaseWeaponComponent, Ammo);
+	DOREPLIFETIME(UBaseWeaponComponent, IsAttacking);
+}
+
+
 void UBaseWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
 	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
+}
+
+
+void UBaseWeaponComponent::OnRep_Ammo()
+{
+	OnChangeAmmo.Broadcast(Ammo);
 }
 
 void UBaseWeaponComponent::ConsumeAmmo(float Amount)
@@ -32,7 +46,7 @@ void UBaseWeaponComponent::ConsumeAmmo(float Amount)
 		OnChangeAmmo.Broadcast(Ammo);
 		if (Ammo == 0.0f)
 		{
-			EndAttack();
+			Server_EndAttack();
 		}
 	}
 }
@@ -43,20 +57,50 @@ void UBaseWeaponComponent::RestoreAmmo(float Amount)
 	OnChangeAmmo.Broadcast(Ammo);
 }
 
-void UBaseWeaponComponent::StartAttack()
+void UBaseWeaponComponent::OnRep_IsAttacking()
+{
+
+}
+
+void UBaseWeaponComponent::Server_StartAttack_Implementation() 
 {
 	if (Ammo > 0.0f || bInfiniteAmmo)
 	{
 		IsAttacking = true;
 	}
 }
-void UBaseWeaponComponent::EndAttack()
+
+void UBaseWeaponComponent::Server_EndAttack_Implementation()
 {
 	IsAttacking = false;
 }
+
 bool UBaseWeaponComponent::IsAttack()
 {
 	return IsAttacking;
+}
+
+void UBaseWeaponComponent::StartAttack(bool StartLocaly)
+{
+	/** On client start attack momentally */
+	if (StartLocaly)
+	{
+		if (Ammo > 0.0f || bInfiniteAmmo)
+		{
+			IsAttacking = true;
+		}
+	}
+	Server_StartAttack();
+}
+
+void UBaseWeaponComponent::EndAttack(bool EndLocaly)
+{
+	/** On client end attack */
+	if (EndLocaly)
+	{
+		IsAttacking = false;
+	}
+	Server_EndAttack();
 }
 
 USceneComponent* UBaseWeaponComponent::GetDirectionComponent()

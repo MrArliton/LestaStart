@@ -16,6 +16,7 @@ class LESTASTART_API UBlastWeaponComponent : public UBaseWeaponComponent
 	GENERATED_BODY()
 
 private:
+	UPROPERTY(Replicated)
 	float CurrentPower = 0.0f;
 	/** An array of actors that will not take damage by this component */
 	TArray<AActor*> IgnoredActors;
@@ -30,6 +31,8 @@ public:
 	UBlastWeaponComponent();
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	/** Add an actor that will not take damage by this component */
 	void AddIgnoreActor(AActor* Actor);

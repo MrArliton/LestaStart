@@ -22,15 +22,18 @@ class LESTASTART_API ATurretActor : public ALivingMeshActor
 public:
 	ATurretActor();
 
-protected:
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
 	virtual void Tick(float DeltaTime) override;
 
-	void OnFoundPlayer(AActor* FoundActor);
-	void OnLosePlayer(AActor* LostActor);
+protected:
 
+	void OnFoundPlayer(APawn* FoundActor);
+	void OnNotFoundPlayers();
 private:
-	FRotator RotationToPlayer;
 
+	UPROPERTY(Replicated)
+	FRotator RotationToPlayer;
 public:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")

@@ -1,6 +1,7 @@
 *.vsconfig
 *.sln
 *.vs
+*.7z
 Binaries
 DerivedDataCache
 Intermediate

@@ -21,14 +21,16 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Spawner")
 	TSubclassOf<AActor> SpawnActorClass;
 			
-	TArray<int32> GetRandomArrayOfIndexes(int32 InMin, int32 InMax, int32 Size);
-
 	virtual void BeginPlay() override;
+
+private:
+	TArray<int32> GetRandomArrayOfIndexes(int32 InMin, int32 InMax, int32 Size);
 
 public:	
 	virtual void Tick(float DeltaTime) override;
 
 	void Spawn();
+
 	UPROPERTY(EditDefaultsOnly, Category = "Spawner")
 	bool bOnBeginSpawn = true;
 

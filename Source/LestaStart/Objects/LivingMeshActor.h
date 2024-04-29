@@ -31,19 +31,19 @@ protected:
 	virtual void OnDeath();
 
 public:	
-	// Called every frame
 	virtual void Tick(float DeltaTime) override;
 
-	UPROPERTY(EditDefaultsOnly)
-	USceneComponent* SceneComponent;
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	UPROPERTY(EditAnywhere)
 	UStaticMeshComponent* StaticMesh;
 
-	UPROPERTY(EditDefaultsOnly, Category = "HealthAttribute")
+	UPROPERTY(Replicated, EditDefaultsOnly, Category = "Attribute")
 	ULivingAttributeComponent* LivingAttributeComponent;
 
-	UPROPERTY(EditDefaultsOnly, Category = "HealthAttribute")
+	UPROPERTY(EditDefaultsOnly, Category = "Utility")
 	UHealthTextComponent* HealthTextComponent;
+
+
 };
 
