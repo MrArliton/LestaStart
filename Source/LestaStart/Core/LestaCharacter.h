@@ -68,11 +68,6 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	FName WeaponSocketName;
 
-	/** Controll pitch on clients */
-	UFUNCTION(Server, Unreliable)
-	void Server_ChangePitch(float PitchInput);
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multicast_ChangePitch(float PitchInput);
 private:
 	UPROPERTY(Replicated)
 	ABaseWeapon* CurrentWeapon;
@@ -85,10 +80,10 @@ private:
 	UPROPERTY(Replicated)
 	int32 CurrentWeaponId = 0;
 
-	
+	/** Animation */
+	UPROPERTY(Replicated)
+	FRotator AnimRotation;
 public:	
-
-	//** Attributes */
 	UPROPERTY(Replicated, EditDefaultsOnly, Category = "Attribute")
 	ULivingAttributeComponent* LivingAttributeComponent;
 
@@ -97,4 +92,7 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	ABaseWeapon* GetCurrentWeaponActor();
+
+	UFUNCTION(BlueprintCallable, Category = "Animation")
+	FRotator GetAnimationRotation();
 };

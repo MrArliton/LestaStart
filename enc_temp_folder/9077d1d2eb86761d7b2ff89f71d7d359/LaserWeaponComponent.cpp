@@ -139,12 +139,5 @@ void ULaserWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 
 void ULaserWeaponComponent::Multicast_Debug_Implementation(FVector Location) 
 {
-	if (GetOwnerRole() == ROLE_Authority)
-	{
-		DrawDebugSphere(GetWorld(), Location, 10, 10, FColor::Red, false, 0.5f);
-	}
-	else 
-	{
-		DrawDebugSphere(GetWorld(), Location, 10, 10, FColor::Cyan, false, 0.5f);
-	}
+	DrawDebugSphere(GetWorld(), Location, 10, 10, FColor::Cyan, false, 0.5f);
 }

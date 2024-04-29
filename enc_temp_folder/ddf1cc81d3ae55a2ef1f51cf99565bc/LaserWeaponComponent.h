@@ -48,7 +48,6 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Weapon")
 	UNiagaraSystem* LaserBeam;
 
-	/** Debugging */
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_Debug(FVector Location);
 };

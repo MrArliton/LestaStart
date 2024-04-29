@@ -35,8 +35,11 @@ ALestaCharacter::ALestaCharacter()
 
 void  ALestaCharacter::Tick(float DeltaTime)
 {
-	SetRemoteViewPitch(GetControlRotation().Pitch);
-
+	// Set anim rotation, Controll Rotation auto replicated to server, server update AnimRotation and replicate it on clients.   
+	if (IsValid(GetController()))
+	{
+		AnimRotation = GetControlRotation();
+	}
 }
 
 void ALestaCharacter::BeginPlay()
@@ -87,7 +90,10 @@ void ALestaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ALestaCharacter, LivingAttributeComponent);
+	DOREPLIFETIME(ALestaCharacter, LivingAttributeComponent)
+	// Skip owner: Since owner is the source of the results, the server should not check it. 
+	DOREPLIFETIME_CONDITION(ALestaCharacter, AnimRotation, ELifetimeCondition::COND_SkipOwner)
+	// Owner Only: Other clients do not control the player's weapon, so they do not need up-to-date information about it.
 	DOREPLIFETIME_CONDITION(ALestaCharacter, Weapons, ELifetimeCondition::COND_OwnerOnly)
 	DOREPLIFETIME_CONDITION(ALestaCharacter, CurrentWeaponId, ELifetimeCondition::COND_OwnerOnly)
 	DOREPLIFETIME_CONDITION(ALestaCharacter, CurrentWeapon, ELifetimeCondition::COND_OwnerOnly)
@@ -130,9 +136,9 @@ void ALestaCharacter::OnLookInput(const FInputActionInstance& InputActionInstanc
 {
 	const FVector2D Input2D = InputActionInstance.GetValue().Get<FVector2D>();
 	AddControllerYawInput(Input2D.X);
-	AddControllerPitchInput(Input2D.Y);
-	Server_ChangePitch(Input2D.Y);
-		
+	AddControllerPitchInput(Input2D.Y);	
+
+	AnimRotation = GetControlRotation();
 }
 
 void ALestaCharacter::OnChangeWeaponInput(const FInputActionInstance& InputActionInstance)
@@ -218,16 +224,6 @@ void ALestaCharacter::OnDeath()
 	}
 }
 
-void ALestaCharacter::Server_ChangePitch_Implementation(float PitchInput)
-{
-	Multicast_ChangePitch(PitchInput);
-}
-
-void ALestaCharacter::Multicast_ChangePitch_Implementation(float PitchInput)
-{
-	AddControllerPitchInput(PitchInput);
-}
-
 void ALestaCharacter::AttachWeapon(ABaseWeapon* Weapon)
 {
 	if(IsValid(Weapon))
@@ -271,4 +267,9 @@ ULivingAttributeComponent* ALestaCharacter::GetLivingAttributeComponent()
 ABaseWeapon* ALestaCharacter::GetCurrentWeaponActor()
 {
 	return CurrentWeapon;
+}
+
+FRotator ALestaCharacter::GetAnimationRotation()
+{
+	return AnimRotation;
 }
