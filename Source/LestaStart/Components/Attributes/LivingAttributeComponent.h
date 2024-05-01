@@ -1,4 +1,3 @@
-// Fill out your copyright notice in the Description page of Project Settings.
 
 #pragma once
 
@@ -6,7 +5,7 @@
 #include "Components/ActorComponent.h"
 #include "LivingAttributeComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FHealthDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDeathDelegate);
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHealthDelegateOne, float, Health);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
@@ -18,7 +17,7 @@ public:
 	ULivingAttributeComponent();
 
 	UPROPERTY(BlueprintAssignable, Category = "Attribute")
-	FHealthDelegate OnDeath;
+	FDeathDelegate OnDeath;
 	UPROPERTY(BlueprintAssignable, Category = "Attribute")
 	FHealthDelegateOne OnChangeHealth;
 

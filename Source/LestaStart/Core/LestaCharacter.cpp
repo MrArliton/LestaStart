@@ -9,8 +9,8 @@
 
 ALestaCharacter::ALestaCharacter()
 {
-	NetUpdateFrequency = 10.f;
 	bReplicates = true;
+	NetUpdateFrequency = 10.f;
 	SetReplicateMovement(true);
 
 	USkeletalMeshComponent* SkeletalMesh = GetMesh();
@@ -35,10 +35,10 @@ ALestaCharacter::ALestaCharacter()
 
 void  ALestaCharacter::Tick(float DeltaTime)
 {
-	// Set anim rotation, Controll Rotation auto replicated to server, server update AnimRotation and replicate it on clients.   
+	// AnimRotation replicated to server by 'server rpc', and server replicate it on other clients by 'net multicast rpc'.   
 	if (IsValid(GetController()))
 	{
-		AnimRotation = GetControlRotation();
+		AnimationRotation = GetControlRotation();
 	}
 }
 
@@ -60,7 +60,7 @@ void ALestaCharacter::BeginPlay()
 		{
 			PlayerInputComponent = PlayerController->InputComponent;
 		}
-
+		// Spawn and attach default player weapons.
 		for (TSubclassOf<ABaseWeapon> WeaponClass : WeaponClasses)
 		{
 			if (WeaponClass.Get())
@@ -76,7 +76,7 @@ void ALestaCharacter::BeginPlay()
 					CurrentWeapon->Deactivate(false);
 				}
 			}
-			/** Activate first weapon */
+			// Activate first weapon
 			if (!Weapons.IsEmpty())
 			{
 				CurrentWeapon = Weapons[0];
@@ -92,7 +92,7 @@ void ALestaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 	DOREPLIFETIME(ALestaCharacter, LivingAttributeComponent)
 	// Skip owner: Since owner is the source of the results, the server should not check it. 
-	DOREPLIFETIME_CONDITION(ALestaCharacter, AnimRotation, ELifetimeCondition::COND_SkipOwner)
+	DOREPLIFETIME_CONDITION(ALestaCharacter, AnimationRotation, ELifetimeCondition::COND_SkipOwner)
 	// Owner Only: Other clients do not control the player's weapon, so they do not need up-to-date information about it.
 	DOREPLIFETIME_CONDITION(ALestaCharacter, Weapons, ELifetimeCondition::COND_OwnerOnly)
 	DOREPLIFETIME_CONDITION(ALestaCharacter, CurrentWeaponId, ELifetimeCondition::COND_OwnerOnly)
@@ -138,70 +138,28 @@ void ALestaCharacter::OnLookInput(const FInputActionInstance& InputActionInstanc
 	AddControllerYawInput(Input2D.X);
 	AddControllerPitchInput(Input2D.Y);	
 
-	AnimRotation = GetControlRotation();
+	AnimationRotation = GetControlRotation();
 }
 
 void ALestaCharacter::OnChangeWeaponInput(const FInputActionInstance& InputActionInstance)
 {
 	/** Cannot change weapon when we attack */
-	if (HasAuthority())
+	float Value = InputActionInstance.GetValue().Get<float>();
+
+	if (Value > 0.0f)
 	{
-		if (IsValid(CurrentWeapon) && CurrentWeapon->IsAttacking())
-		{
-			return;
-		}
-
-		float Value = InputActionInstance.GetValue().Get<float>();
-
-		if (Value > 0.0f)
-		{
-			CurrentWeaponId++;
-			if (CurrentWeaponId >= Weapons.Num())
-			{
-				CurrentWeaponId = 0;
-			}
-		}
-		else
-		{
-			CurrentWeaponId--;
-			if (CurrentWeaponId < 0)
-			{
-				CurrentWeaponId = Weapons.Num() - 1;
-			}
-		}
-
-		CurrentWeapon->Deactivate(false);
-		CurrentWeapon = Weapons[CurrentWeaponId];
-		CurrentWeapon->Activate();
-		OnChangeWeapon.Broadcast(CurrentWeapon);
+		ChangeWeapon(CurrentWeaponId + 1);
 	}
-
+	else
+	{
+		ChangeWeapon(CurrentWeaponId - 1);
+	}
 }
+
 void ALestaCharacter::OnChangeWeaponNumberInput(const FInputActionInstance& InputActionInstance)
 {
-	/** Cannot change weapon when we attack */
-	if (HasAuthority())
-	{
-		if (IsValid(CurrentWeapon) && CurrentWeapon->IsAttacking())
-		{
-			return;
-		}
-
-		int32 Value = static_cast<int>(InputActionInstance.GetValue().Get<float>());
-		CurrentWeaponId = Value;
-		if (CurrentWeaponId >= Weapons.Num())
-		{
-			CurrentWeaponId = 0;
-		}
-		else if (CurrentWeaponId < 0)
-		{
-			CurrentWeaponId = Weapons.Num() - 1;
-		}
-		CurrentWeapon->Deactivate(false);
-		CurrentWeapon = Weapons[CurrentWeaponId];
-		CurrentWeapon->Activate();
-		OnChangeWeapon.Broadcast(CurrentWeapon);
-	}
+	int32 Value = static_cast<int>(InputActionInstance.GetValue().Get<float>());
+	ChangeWeapon(Value);
 }
 
 void ALestaCharacter::OnDamagedAny(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser)
@@ -224,23 +182,78 @@ void ALestaCharacter::OnDeath()
 	}
 }
 
-void ALestaCharacter::AttachWeapon(ABaseWeapon* Weapon)
+void ALestaCharacter::AttachWeapon(ABaseWeapon* Weapon, bool Deactivate)
 {
-	if(IsValid(Weapon))
+	if (HasAuthority())
 	{
-		Weapons.Add(Weapon);
-		Weapon->AttachWeapon(this, WeaponSocketName);
-		APlayerController* PlayerController = Cast<APlayerController>(GetController());
-
-		if (IsValid(PlayerController))
+		if (IsValid(Weapon))
 		{
-			Weapon->SetupInputComponent(PlayerController->InputComponent);			
+			Weapons.Add(Weapon);
+			Weapon->AttachWeapon(this, WeaponSocketName);
+
+			APlayerController* PlayerController = Cast<APlayerController>(GetController());
+
+			if (IsValid(PlayerController))
+			{
+				Weapon->SetupInputComponent(PlayerController->InputComponent);
+			}
+			else 
+			{
+				UE_LOG(LogTemp, Error, TEXT("Cannot attach input component to weapon, player controller is undefined. Object: %s"), *GetName())
+			}
+			Weapon->Deactivate(false);
 		}
-		Weapon->Deactivate(false);
 	}
 }
 
-void ALestaCharacter::OnRep_Weapons(const TArray<ABaseWeapon*>& OldWeapons)
+void ALestaCharacter::Server_ChangeWeapon_Implementation(int32 NewWeaponID)
+{
+	ChangeWeapon(NewWeaponID);
+}
+
+void ALestaCharacter::ChangeWeapon(int32 NewWeaponID)
+{
+	// Cannot change weapon, when player is attaking
+	if (IsValid(CurrentWeapon) && CurrentWeapon->IsAttacking())
+	{
+		return;
+	}
+
+	if (HasAuthority())
+	{	
+		if (NewWeaponID >= Weapons.Num())
+		{
+			CurrentWeaponId = 0;
+		}
+		else if (NewWeaponID < 0)
+		{
+			CurrentWeaponId = Weapons.Num() - 1;
+		}
+		else 
+		{
+			CurrentWeaponId = NewWeaponID;
+		}
+		// Deactivate old weapon
+		if (IsValid(CurrentWeapon))
+		{
+			CurrentWeapon->Deactivate(false);
+		}
+		// Set new weapon
+		CurrentWeapon = Weapons[CurrentWeaponId];
+		// Activate new weapon
+		if (IsValid(CurrentWeapon))
+		{
+			CurrentWeapon->Activate();
+		}
+	}
+	else 
+	{
+		Server_ChangeWeapon(NewWeaponID);
+	}
+	OnChangeWeapon.Broadcast(CurrentWeapon);
+}
+
+void ALestaCharacter::OnRep_Weapons()
 {
 	APlayerController* PlayerController = Cast<APlayerController>(GetController());
 
@@ -271,5 +284,5 @@ ABaseWeapon* ALestaCharacter::GetCurrentWeaponActor()
 
 FRotator ALestaCharacter::GetAnimationRotation()
 {
-	return AnimRotation;
+	return AnimationRotation;
 }

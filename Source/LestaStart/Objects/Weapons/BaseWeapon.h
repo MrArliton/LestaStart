@@ -26,7 +26,7 @@ public:
 	 * "AutoDestoy" - Set destroy weapon after detach */
 	virtual void DetachWeapon(bool AutoDestoy = false);	
 
-	/** Assign key bindings for weapon to new input component */
+	/** Assign key bindings for weapon to new input component (clear old input component automatically) */
 	virtual void SetupInputComponent(UInputComponent* NewInputComponent);
 	/** Remove key bindings for weapon from input component */
 	virtual void ClearInputComponent();

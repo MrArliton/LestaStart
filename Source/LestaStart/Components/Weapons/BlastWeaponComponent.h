@@ -22,10 +22,9 @@ private:
 	TArray<AActor*> IgnoredActors;
 
 protected:
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	float MaxPower = 1.0f;
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	float PowerIPS = 0.1f;
+	/** Force generation rate per second, maximum power is 1.0 */
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon", meta = (ClampMin = "0.01", ClampMax = "1.0"))
+	float PowerIPS;
 
 public:
 	UBlastWeaponComponent();

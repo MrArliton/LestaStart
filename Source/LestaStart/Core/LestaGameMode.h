@@ -14,9 +14,15 @@ class LESTASTART_API ALestaGameMode : public AGameModeBase
 {
 	GENERATED_BODY()
 
+protected:
+	int32 NumberOfLivePlayers = 0;
+
 public:
 	virtual void StartPlay() override;
 
+	virtual void PostLogin(APlayerController* NewPlayer);
 	UFUNCTION()
+	virtual void OnDeathPlayer();
+
 	void RestartLevel();	
 };

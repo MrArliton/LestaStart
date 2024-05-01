@@ -24,11 +24,13 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
-
-	void AttachWeapon(ABaseWeapon* Weapon);
+	/** Attach new weapon to character, only authority.
+	* @param DefaultDeactivated - Deactivate and hide weapon after attaching */
+	void AttachWeapon(ABaseWeapon* Weapon, bool DefaultDeactivated = true);
 
 	UPROPERTY(BlueprintAssignable, Category = "Weapon")
 	FCharacterDelegateOne OnChangeWeapon;
+
 protected:
 	virtual void BeginPlay() override;
 
@@ -40,7 +42,6 @@ protected:
 	/** Input action assigned to movement. */
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> MoveInputAction;
-
 	/** Input action assigned to camera movement. */
 	UPROPERTY(EditDefaultsOnly, Category = "Input")
 	TObjectPtr<UInputAction> LookInputAction;
@@ -65,24 +66,29 @@ protected:
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TArray<TSubclassOf<ABaseWeapon>> WeaponClasses;
+
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	FName WeaponSocketName;
 
 private:
 	UPROPERTY(Replicated)
+	int32 CurrentWeaponId = 0;
+	UPROPERTY(Replicated)
 	ABaseWeapon* CurrentWeapon;
 	
 	UFUNCTION()
-	void OnRep_Weapons(const TArray<ABaseWeapon*>& OldWeapons);
+	void OnRep_Weapons();
 	UPROPERTY(Replicated, ReplicatedUsing = OnRep_Weapons)
 	TArray<ABaseWeapon*> Weapons;
 
-	UPROPERTY(Replicated)
-	int32 CurrentWeaponId = 0;
+	UFUNCTION(Server, Unreliable)
+	void Server_ChangeWeapon(int32 NewWeaponID);
 
-	/** Animation */
+	void ChangeWeapon(int32 NewWeaponID);
+	
+	/** Rotation for character animations */
 	UPROPERTY(Replicated)
-	FRotator AnimRotation;
+	FRotator AnimationRotation;
 public:	
 	UPROPERTY(Replicated, EditDefaultsOnly, Category = "Attribute")
 	ULivingAttributeComponent* LivingAttributeComponent;

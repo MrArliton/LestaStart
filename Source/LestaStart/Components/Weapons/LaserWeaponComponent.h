@@ -25,6 +25,8 @@ private:
 
 	FTimerHandle TimerOverheatHandle;
 
+	FCollisionQueryParams TraceParams;
+
 protected:
 	// Problem - VFX effect appears delayed when moving character 
 	UNiagaraComponent* LaserNiagaraComponent;

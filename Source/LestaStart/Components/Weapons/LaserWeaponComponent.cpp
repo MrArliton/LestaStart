@@ -10,6 +10,10 @@
 ULaserWeaponComponent::ULaserWeaponComponent() : UBaseWeaponComponent()
 {
 	MaxAmmo = 3.0f;
+	BaseDamage = 30.0f;
+	AttackDistance = 1500.0f;
+	// We ignore our actor during tracing or attack
+	TraceParams.AddIgnoredActor(GetOwner());
 }
 
 void ULaserWeaponComponent::BeginPlay()
@@ -24,7 +28,7 @@ void ULaserWeaponComponent::BeginPlay()
 			LaserNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(LaserBeam, DirectionComponent, NAME_None, FVector(0.f), FRotator(0.f), EAttachLocation::Type::KeepRelativeOffset, false, false);
 			if (!IsValid(LaserNiagaraComponent))
 			{
-				UE_LOG(LogTemp, Error, TEXT("Cannot spawn LaserNiagaraComponent, object: %s"), *GetName());
+				UE_LOG(LogTemp, Warning, TEXT("Cannot spawn LaserNiagaraComponent, object: %s"), *GetName());
 			}
 		}
 	}
@@ -57,10 +61,11 @@ void ULaserWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 			// End position
 			const FVector EndPostion = StartPosition + Direction * AttackDistance;
 			// Trace 
-			World->SweepSingleByChannel(Result, StartPosition, EndPostion, FRotator::ZeroRotator.Quaternion(), ECC_Pawn, FCollisionShape::MakeSphere(TraceSphereRadius));
+			World->SweepSingleByChannel(Result, StartPosition, EndPostion, FRotator::ZeroRotator.Quaternion(), ECC_Pawn, FCollisionShape::MakeSphere(TraceSphereRadius), TraceParams);
 			Multicast_Debug(StartPosition);
 			Multicast_Debug(EndPostion);
-			if (Result.bBlockingHit && GetOwnerRole() == ROLE_Authority)
+			
+			if (GetOwnerRole() == ROLE_Authority && Result.bBlockingHit)
 			{
 				const float Damage = FMath::Max(0, DeltaTime * BaseDamage * (1 - Result.Distance / AttackDistance)); // Damage depends on distance (Linear)
 				UGameplayStatics::ApplyDamage(Result.GetActor(), Damage, GetWorld()->GetFirstPlayerController(), GetOwner(), nullptr);
@@ -95,7 +100,7 @@ void ULaserWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 		{
 			Server_EndAttack();
 
-			UE_LOG(LogInput, Error, TEXT("DirectionComponent is undefined for: %s"), *GetFullNameSafe(this));
+			UE_LOG(LogInput, Warning, TEXT("DirectionComponent is undefined for: %s"), *GetFullNameSafe(this));
 		}
 		// Ammo Logic
 		this->ConsumeAmmo(DeltaTime * DischargingSpeed);

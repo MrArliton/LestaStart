@@ -8,6 +8,10 @@
 UBlastWeaponComponent::UBlastWeaponComponent() : UBaseWeaponComponent()
 {
 	IgnoredActors.Add(GetOwner());
+
+	BaseDamage = 100.0f;
+	AttackDistance = 800.0f;
+	PowerIPS = 0.1f;
 }
 
 void UBlastWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)  
@@ -16,13 +20,12 @@ void UBlastWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 
 	if (IsAttacking) 
 	{
-		CurrentPower = FMath::Clamp(DeltaTime * PowerIPS + CurrentPower, 0, MaxPower);
+		CurrentPower = FMath::Clamp(DeltaTime * PowerIPS + CurrentPower, 0, 1.0f);
 	}
 	else
 	{
 		if (IsValid(DirectionComponent) && CurrentPower > 0.0f)
 		{
-
 			DrawDebugSphere(GetWorld(), DirectionComponent->GetComponentLocation(), AttackDistance, 20, FColor::Emerald);
 			if (GetOwnerRole() == ROLE_Authority)
 			{
