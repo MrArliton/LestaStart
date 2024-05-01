@@ -21,6 +21,7 @@ public:
 	virtual void StartPlay() override;
 
 	virtual void PostLogin(APlayerController* NewPlayer);
+
 	UFUNCTION()
 	virtual void OnDeathPlayer();
 

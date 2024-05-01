@@ -1,12 +1,11 @@
-﻿// Fill out your copyright notice in the Description page of Project Settings.
-
+﻿
 #include "LestaCharacter.h"
 #include "EnhancedInputComponent.h"
 #include "Camera/CameraComponent.h"
 #include "Net/UnrealNetwork.h"
 #include "Blueprint/UserWidget.h" 
-#include "../Components/Attributes/LivingAttributeComponent.h"
-
+#include "LestaStart/Components/Attributes/LivingAttributeComponent.h"
+#include "LestaStart/Components/Utility/TraceEstimatorComponent.h"
 ALestaCharacter::ALestaCharacter()
 {
 	bReplicates = true;
@@ -19,9 +18,21 @@ ALestaCharacter::ALestaCharacter()
 	{
 		// Camera
 		CameraComponent = CreateDefaultSubobject<UCameraComponent>(TEXT("MainCamera"));
-		CameraComponent->bUsePawnControlRotation = true; // Camera rotation is synchronized with Player Controller rotation
-		CameraComponent->SetupAttachment(SkeletalMesh);
+		if (CameraComponent)
+		{
+			CameraComponent->bUsePawnControlRotation = true; // Camera rotation is synchronized with Player Controller rotation
+			CameraComponent->SetupAttachment(SkeletalMesh);	
+		}
+
+		// Animation Trace Component 
+		AnimationTraceComponent = CreateDefaultSubobject<UTraceEstimatorComponent>(TEXT("Animation Trace Estimator"));
+		if (AnimationTraceComponent)
+		{
+			AnimationTraceComponent->bAutoTrace = true;
+			AnimationTraceComponent->SetupAttachment(SkeletalMesh, WeaponSocketName);
+		}
 	}
+
 
 	// Replicated Living Attribute Component
 	LivingAttributeComponent = CreateDefaultSubobject<ULivingAttributeComponent>(TEXT("LivingAttribute"));
@@ -30,16 +41,12 @@ ALestaCharacter::ALestaCharacter()
 		LivingAttributeComponent->SetIsReplicated(true);
 		LivingAttributeComponent->OnDeath.AddDynamic(this, &ALestaCharacter::OnDeath);
 	}
+
 	this->OnTakeAnyDamage.AddDynamic(this, &ALestaCharacter::OnDamagedAny);
 }
 
 void  ALestaCharacter::Tick(float DeltaTime)
 {
-	// AnimRotation replicated to server by 'server rpc', and server replicate it on other clients by 'net multicast rpc'.   
-	if (IsValid(GetController()))
-	{
-		AnimationRotation = GetControlRotation();
-	}
 }
 
 void ALestaCharacter::BeginPlay()
@@ -92,7 +99,7 @@ void ALestaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutL
 
 	DOREPLIFETIME(ALestaCharacter, LivingAttributeComponent)
 	// Skip owner: Since owner is the source of the results, the server should not check it. 
-	DOREPLIFETIME_CONDITION(ALestaCharacter, AnimationRotation, ELifetimeCondition::COND_SkipOwner)
+	DOREPLIFETIME_CONDITION(ALestaCharacter, AnimationRotation, ELifetimeCondition::COND_SimulatedOnly)
 	// Owner Only: Other clients do not control the player's weapon, so they do not need up-to-date information about it.
 	DOREPLIFETIME_CONDITION(ALestaCharacter, Weapons, ELifetimeCondition::COND_OwnerOnly)
 	DOREPLIFETIME_CONDITION(ALestaCharacter, CurrentWeaponId, ELifetimeCondition::COND_OwnerOnly)
@@ -271,6 +278,29 @@ void ALestaCharacter::OnRep_Weapons()
 	}
 }
 
+
+void ALestaCharacter::UpdateAnimationRotation()
+{
+	// Get controll rotation (On clients, animation rotation replication occurs from the server)
+	FRotator BufferRotator;
+	if (IsValid(GetController()))
+	{
+		BufferRotator = GetControlRotation().GetNormalized();
+	}
+	else 
+	{
+		BufferRotator = AnimationRotation;
+	}
+	// Limiting animation rotation when colliding with a wall
+	float RotationCorrectionValue = AnimationTraceComponent->GetLastEstimatedValue();
+
+	if (BufferRotator.Pitch < RotationCorrectionValue)
+	{
+		BufferRotator.Pitch = RotationCorrectionValue;
+	}
+	AnimationRotation = BufferRotator;
+}
+
 //** Getters *
 ULivingAttributeComponent* ALestaCharacter::GetLivingAttributeComponent() 
 {
@@ -284,5 +314,11 @@ ABaseWeapon* ALestaCharacter::GetCurrentWeaponActor()
 
 FRotator ALestaCharacter::GetAnimationRotation()
 {
+	// Update AnimationRotation before return its value 
+	// Update only on autonomous proxy and server
+	if (GetRemoteRole() > ROLE_SimulatedProxy)
+	{
+		UpdateAnimationRotation();
+	}
 	return AnimationRotation;
 }

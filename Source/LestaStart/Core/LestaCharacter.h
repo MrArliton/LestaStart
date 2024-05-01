@@ -12,6 +12,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCharacterDelegateOne, ABaseWeapon*,
 
 class UCameraComponent;
 class ULivingAttributeComponent;
+class UTraceEstimatorComponent;
 
 UCLASS()
 class LESTASTART_API ALestaCharacter : public ACharacter
@@ -86,12 +87,21 @@ private:
 
 	void ChangeWeapon(int32 NewWeaponID);
 	
-	/** Rotation for character animations */
+	/** Rotation for character animations 
+	 * "AnimationRotation" copied to server by 'server rpc', and server replicate it on other clients. */
 	UPROPERTY(Replicated)
 	FRotator AnimationRotation;
+	/** Update AnimationRotation used by animation in the character */
+	void UpdateAnimationRotation();
+
 public:	
+	/** Represents the character's life - its health */
 	UPROPERTY(Replicated, EditDefaultsOnly, Category = "Attribute")
 	ULivingAttributeComponent* LivingAttributeComponent;
+
+	/** Tracing to detect obstacles in front of the weapon  */
+	UPROPERTY(EditDefaultsOnly, Category = "Animation")
+	UTraceEstimatorComponent* AnimationTraceComponent;
 
 	UFUNCTION(BlueprintCallable, Category = "Attribute")
 	ULivingAttributeComponent* GetLivingAttributeComponent();

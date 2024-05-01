@@ -32,13 +32,12 @@ void ABaseWeapon::AttachWeapon(ALestaCharacter* Character, FName SocketName)
 		UE_LOG(LogTemp, Error, TEXT("Cannot attach weapon to character, character is invalid, object: %s"), *this->GetName());
 		return;
 	}
-	// Need for correct working rpc
-	SetOwner(Character);
-
 	SetActorEnableCollision(false);	
 
 	if (HasAuthority())
 	{
+		// Need for correct working rpc
+		SetOwner(Character);
 		/** Attach weapon to character */
 		FAttachmentTransformRules AttachmentTransformRules(EAttachmentRule::SnapToTarget, true);
 		this->AttachToComponent(Character->GetMesh(), AttachmentTransformRules, SocketName);

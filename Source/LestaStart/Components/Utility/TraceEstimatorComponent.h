@@ -10,7 +10,7 @@
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FTraceEstimatorDelegateTwo, float, Value, AActor*, HitActor);
 
 /** Create a trace and compare the distance to the actor using floating curves, otherwise just return the distance
- * Curse timeline "-1.0" - trace did not reach a actor, ">0.0" - Hit some actor   */
+ * Curse timeline "-1.0" - trace did not reach a actor, ">=0.0" - Hit some actor   */
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class LESTASTART_API UTraceEstimatorComponent : public USceneComponent
 {
@@ -19,25 +19,37 @@ class LESTASTART_API UTraceEstimatorComponent : public USceneComponent
 public:
 	UTraceEstimatorComponent();
 
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+	virtual void BeginPlay() override;
+
 	/** Call trace logic */
 	float MakeTrace();
 	UFUNCTION(BlueprintCallable, Category = "Corrector")
-	float GetLastValue();
+	float GetLastEstimatedValue() const;
+	UFUNCTION(BlueprintCallable, Category = "Corrector")
+	AActor* GetHitActor() const;
+
+protected:
+	/** The interval between traces */
+	UPROPERTY(EditDefaultsOnly, Category = "Corrector|Trace", meta = (ClampMin = "0.0", Units = "s", EditCondition = "bAutoTrace"))
+	float TraceInterval;
+	/** Add owner to ignore list  */
+	UPROPERTY(EditDefaultsOnly, Category = "Corrector|Trace")
+	bool bTraceIgnoreOwner = true;
+
+public:
+	/** Set TraceInterval - TickInterval */
+	void SetTraceInterval(float NewTraceInterval);
+	/** Interval between traces */
+	float GetTraceInterval() const;
 
 	/** The delegate is called every trace  */
 	UPROPERTY(BlueprintAssignable, Category = "Corrector")
 	FTraceEstimatorDelegateTwo OnEstimateTrace;
 
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
-protected:
 	/** If AutoTrace enabled - call "OnTrace" delegate and update "EstimatedValue" */
 	UPROPERTY(EditDefaultsOnly, Category = "Corrector")
 	bool bAutoTrace = false;
-	
-	/** The interval between traces */
-	UPROPERTY(EditDefaultsOnly, Category = "Corrector|Trace", meta = (ClampMin = "0.0", Units = "s", EditCondition = "bAutoTrace"))
-	float TraceInterval;
 	/** Trace sphere radius */
 	UPROPERTY(EditDefaultsOnly, Category = "Corrector|Trace", meta = (ClampMin = "0.0"))
 	float TraceSphereRadius;
@@ -59,11 +71,8 @@ protected:
 
 private:
 	/** Evaluated last result */
-	float EstimatedValue;
+	float EstimatedValue = 0.0f;
 	/** Last hited actor */
 	AActor* HitActor;
-	/** Arrow indicate the direction of a component */
-	UPROPERTY(VisibleDefaultsOnly, Category = "Editor") 
-	UArrowComponent* ArrowComponent;
 };
 

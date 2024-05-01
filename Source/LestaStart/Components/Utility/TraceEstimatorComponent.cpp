@@ -3,14 +3,30 @@
 
 UTraceEstimatorComponent::UTraceEstimatorComponent()
 {
+	// Default this component only local
+	SetIsReplicatedByDefault(false);
+
 	PrimaryComponentTick.bCanEverTick = true;
-	
+
 	TraceInterval = 0.1f;
 	TraceSphereRadius = 4.0f;
 	MaxDistance = 500.0f;
-	// Create arrow to indicate the direction of a component
-	ArrowComponent = CreateDefaultSubobject<UArrowComponent>(TEXT("Arrow Component"));
-	ArrowComponent->SetupAttachment(this);
+	CollisionChannel = ECC_Pawn;
+}
+
+void UTraceEstimatorComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	PrimaryComponentTick.TickInterval = TraceInterval;
+
+	if(bTraceIgnoreOwner)
+	{
+		if(AActor* Owner = GetOwner())
+		{
+			TraceParams.AddIgnoredActor(Owner);
+		}
+	}
 }
 
 
@@ -57,24 +73,40 @@ float UTraceEstimatorComponent::MakeTrace()
 			UE_LOG(LogTemp, Warning, TEXT("Estimation Curve is undefined, object: %s"), *GetName());
 		}
 	}
-	else  // If disable use Curve return Distance 
+	else  // If use of curves disabled return distance to hit actor
 	{
 		EstimatedValue = Distance;
 	}
-	UE_LOG(LogTemp, Warning, TEXT("%f"), EstimatedValue);
 	OnEstimateTrace.Broadcast(EstimatedValue, HitActor);
 	return EstimatedValue;
 }
 
-float UTraceEstimatorComponent::GetLastValue()
+
+float UTraceEstimatorComponent::GetLastEstimatedValue() const
 {
 	return EstimatedValue;
 }
 
+
+AActor* UTraceEstimatorComponent::GetHitActor() const
+{
+	return HitActor;
+}
+
 void UTraceEstimatorComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
 {
-	PrimaryComponentTick.TickInterval = TraceInterval;
-
 	MakeTrace();
+}
+
+
+void UTraceEstimatorComponent::SetTraceInterval(float NewTraceInterval) 
+{
+	PrimaryComponentTick.TickInterval = NewTraceInterval;
+	TraceInterval = NewTraceInterval;
+}
+
+float UTraceEstimatorComponent::GetTraceInterval() const 
+{
+	return TraceInterval;
 }
 
