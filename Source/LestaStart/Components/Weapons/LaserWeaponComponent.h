@@ -12,45 +12,55 @@ class UArrowComponent;
 class UNiagaraSystem;
 class UNiagaraComponent;
 /**
- * Laser Weapon - Create a laser
+ * Create a laser in world  
  */
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class LESTASTART_API ULaserWeaponComponent : public UBaseWeaponComponent
 {
 	GENERATED_BODY()
 
-private:
-	UPROPERTY(Replicated)
-	bool IsOverheat = false;
-
-	FTimerHandle TimerOverheatHandle;
-
-	FCollisionQueryParams TraceParams;
-
-protected:
-	// Problem - VFX effect appears delayed when moving character 
-	UNiagaraComponent* LaserNiagaraComponent;
-
-	float TraceSphereRadius = 5.0f;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon", meta = (ClampMin = "0.0", Units = "s"))
-	float DischargingSpeed = 1.0f; // Consume Ammo Per Second
-
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon", meta = (ClampMin = "0.0", Units = "s"))
-	float ChargingSpeed = 1.0f; // Restore Ammo Per Second
 public:
 	ULaserWeaponComponent();
+
+	//** Sounds and effects *
+	UPROPERTY(EditAnywhere, Category = "Weapon")
+	UNiagaraSystem* LaserBeam;
+
+	/** Debug visualization */
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_Debug(FVector Location);
 
 	virtual void BeginPlay() override;
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-	//** Sounds and effects *
-	UPROPERTY(EditAnywhere, Category = "Weapon")
-	UNiagaraSystem* LaserBeam;
 
-	/** Debugging */
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multicast_Debug(FVector Location);
+protected:
+	/** Laser VFX */
+	UPROPERTY();
+	UNiagaraComponent* LaserNiagaraComponent;
+
+	float TraceSphereRadius;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon", meta = (ClampMin = "0.0", Units = "s"))
+	float DischargingSpeed; // Consume Ammo Per Second
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon", meta = (ClampMin = "0.0", Units = "s"))
+	float ChargingSpeed; // Restore Ammo Per Second
+
+private:
+	/** Attack logic and effects logic */
+	void ActiveState(float DeltaTime);
+	/** Don't attack, disable effects and wait  */
+	void PendingState(float DeltaTime);
+
+	/** Reloading flag - if out of ammo */
+	UPROPERTY(Replicated)
+	bool IsOverheat = false;
+	/** Timer handle to turn off "IsOverheat" after reload time */
+	FTimerHandle TimerOverheatHandle;
+	/** Params for trace */
+	FCollisionQueryParams TraceParams;
+
 };

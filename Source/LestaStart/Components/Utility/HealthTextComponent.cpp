@@ -7,6 +7,33 @@
 UHealthTextComponent::UHealthTextComponent()
 {
 	PrimaryComponentTick.bCanEverTick = true;
+	RotationUpdateInterval = 0.1f;
+}
+
+void UHealthTextComponent::RotateToPlayer()
+{
+	UWorld* World = GetWorld();
+	if (World)
+	{
+		APlayerController* LocalPlayerController = World->GetFirstPlayerController();
+		if (LocalPlayerController)
+		{
+			APawn* LocalPlayerPawn = LocalPlayerController->GetPawn();
+			if (IsValid(LocalPlayerPawn))
+			{
+				// Rotate Component to Player
+				FRotator Rotator = UKismetMathLibrary::FindLookAtRotation(GetComponentLocation(), LocalPlayerPawn->GetActorLocation());
+			    SetWorldRotation(Rotator);
+			}
+		}
+	}
+}
+
+void UHealthTextComponent::BeginPlay()
+{
+	Super::BeginPlay();
+
+	PrimaryComponentTick.TickInterval = RotationUpdateInterval;
 }
 
 void UHealthTextComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
@@ -15,21 +42,7 @@ void UHealthTextComponent::TickComponent(float DeltaTime, ELevelTick TickType, F
 
 	if (bRotateToPlayer)
 	{
-		UWorld* World = GetWorld();
-		if (World)
-		{
-			APlayerController* LocalPlayerController = World->GetFirstPlayerController();
-			if (LocalPlayerController)
-			{
-				APawn* LocalPlayerPawn = LocalPlayerController->GetPawn();
-				if (IsValid(LocalPlayerPawn))
-				{
-					// Rotate Component to Player
-					FRotator Rotator = UKismetMathLibrary::FindLookAtRotation(GetComponentLocation(), LocalPlayerPawn->GetActorLocation());
-					this->SetWorldRotation(Rotator);
-				}
-			}
-		}
+		RotateToPlayer();
 	}
 }
 

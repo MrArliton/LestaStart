@@ -26,6 +26,7 @@ public:
 	virtual void SetupInputComponent(UInputComponent* NewInputComponent) override;
 
 	virtual void Deactivate(bool IsVisible = true) override;
+
 	virtual bool IsAttacking() override;
 
 protected:
@@ -35,8 +36,8 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Weapon|Input")
 	TObjectPtr<UInputAction> AttackInputAction;
 
-	virtual void OnStartAttack(const FInputActionInstance& InputActionInstance);
-	virtual void OnEndAttack(const FInputActionInstance& InputActionInstance);
+	void OnStartAttack(const FInputActionInstance& InputActionInstance);
+	void OnEndAttack(const FInputActionInstance& InputActionInstance);
 
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	UBlastWeaponComponent* BlastWeaponComponent;

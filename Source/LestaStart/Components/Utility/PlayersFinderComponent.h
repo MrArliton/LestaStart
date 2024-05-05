@@ -9,6 +9,11 @@
 DECLARE_MULTICAST_DELEGATE_OneParam(FFindDelegateOne, APawn*);
 DECLARE_MULTICAST_DELEGATE(FFindDelegate);
 
+
+/**
+ * The component that searches for players.
+ * It only works on authority.
+ */
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class LESTASTART_API UPlayersFinderComponent : public UActorComponent
 {
@@ -17,35 +22,46 @@ class LESTASTART_API UPlayersFinderComponent : public UActorComponent
 public:
 	UPlayersFinderComponent();
 
-	/** Checks the player for proximity, line of sight to him (if enabled). */
+	/** Checks the player for proximity, line of sight to him (if enabled bCheckDirectVisibility). */
 	const TSet<APawn*>& SearchPlayers();
+
+	/** If "SearchPlayers" have found the player call this event.
+	 * Called several times if many players are found */
+	FFindDelegateOne OnFoundPlayer;
+	/** If "SearchPlayers" have found the players, this event is triggered for the player actor closest to the owners */
+	FFindDelegateOne OnFoundClosestPlayer;
+	/** If "SearchPlayers" did not find the players */
+	FFindDelegate OnNotFoundPlayers;
+
+	/** Activates constant search, it cannot be disabled */
+	UPROPERTY(EditAnywhere, Category = "Finder")
+	bool bAutoSearch = false;
+
+	/** The interval between calls to "SearchPlayers" function */
+	UPROPERTY(EditAnywhere, Category = "Finder", meta = (ClampMin = "0.0", Units = "s"))
+	float SearchInterval = 0.0f;
+	/** Max distance to the players from the owner actor */
+	UPROPERTY(EditAnywhere, Category = "Finder", meta = (ClampMin = "0.0"))
+	float SearchDistance = 1000.0f;
+	/** If enabled, check using trace with "CollisionChannel" whether an actor is directly visible */
+	UPROPERTY(EditAnywhere, Category = "Finder")
+	bool bCheckDirectVisibility = true;
+	/** Add owner actor to trace ignore list */
+	UPROPERTY(EditAnywhere, Category = "Finder", meta = (EditCondition = "bCheckDirectVisibility"))
+	bool bTraceIgnoreOwner = true;
+	/** CollisionChannel for tracing when checking the direct view of an actor */
+	UPROPERTY(EditAnywhere, Category = "Finder", meta = (EditCondition = "bCheckDirectVisibility"))
+	TEnumAsByte<ECollisionChannel> CollisionChannel;
 
 protected:
 	virtual void BeginPlay() override;
 
+	FCollisionQueryParams TraceParams;
+
+private:
 	FTimerHandle TimerHandle;
 	void OnTimerSearch();
 
-public:
-	FFindDelegateOne OnFoundPlayer;
-	FFindDelegateOne OnFoundClosestPlayer;
-	FFindDelegate OnNotFoundPlayers;
-
-	UPROPERTY(EditAnywhere, Category = "Finder")
-	bool bAutoSearch = false;
-
-	UPROPERTY(EditAnywhere, Category = "Finder", meta = (ClampMin = "0.0", Units = "s"))
-	float SearchInterval = 0.0f;
-
-	UPROPERTY(EditAnywhere, Category = "Finder", meta = (ClampMin = "0.0"))
-	float SearchDistance = 1000.0f;
-
-	UPROPERTY(EditAnywhere, Category = "Finder")
-	bool bCheckDirectVisibility = true;
-
-	UPROPERTY(EditAnywhere, Category = "Finder")
-	TEnumAsByte<ECollisionChannel> CollisionChannel;
-
-private:
+	/** Last found players */
 	TSet<APawn*> FoundPlayers;
 };

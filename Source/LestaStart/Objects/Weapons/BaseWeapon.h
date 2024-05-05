@@ -17,8 +17,6 @@ class LESTASTART_API ABaseWeapon : public AActor
 public:
 	ABaseWeapon();
 
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
 	/** Attach weapon to Character mesh (to socket "SocketName") */
 	virtual void AttachWeapon(ALestaCharacter* Character, FName SocketName);
 
@@ -40,16 +38,17 @@ public:
 	/** Override this function in inherited classes.
 	 *  Default return false */
 	virtual bool IsAttacking();
-
-	virtual bool IsActivated();
 	
+	virtual bool IsActivated();
+
 	USkeletalMeshComponent* GetMesh();
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
 	/** Automatically call by "DetachWeapon" method before "detach logic"  */
 	virtual void PreDetachWeapon();
 
-protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	USkeletalMeshComponent* Mesh;
 

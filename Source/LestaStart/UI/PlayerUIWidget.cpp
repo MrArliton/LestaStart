@@ -8,18 +8,23 @@ void UPlayerUIWidget::NativeConstruct()
 	Super::NativeConstruct();
 }
 
-float UPlayerUIWidget::GetHealthPercentage()
+float UPlayerUIWidget::GetHealthPercentage() const
 {
 	return HealthPercentage;
 }
 
 
-float UPlayerUIWidget::GetAmmoPercentage()
+float UPlayerUIWidget::GetAmmoPercentage() const
 {
 	return AmmoPercantage;
 }
 
-FText UPlayerUIWidget::GetWeaponText()
+float UPlayerUIWidget::GetChargePercentage() const
+{
+	return ChargePercantage;
+}
+
+FText UPlayerUIWidget::GetWeaponText() const
 {
 	if (WeaponTexts.Contains(WeaponId))
 	{
@@ -30,12 +35,12 @@ FText UPlayerUIWidget::GetWeaponText()
 
 void UPlayerUIWidget::OnHealthChanged(float Health)
 {
-	HealthPercentage = Health / MaxHealth;
+	HealthPercentage = FMath::Clamp(Health / MaxHealth, 0.0f, 1.0f);
 }
 
 void UPlayerUIWidget::OnAmmoChanged(float Ammo)
 {
-	AmmoPercantage = Ammo / MaxAmmo;
+	AmmoPercantage = FMath::Clamp(Ammo / MaxAmmo, 0.0f, 1.0f);
 }
 
 void UPlayerUIWidget::OnWeaponChanged(int32 WeaponIndex)
@@ -56,4 +61,9 @@ void UPlayerUIWidget::SetMaxAmmo(float Ammo)
 void UPlayerUIWidget::SetMaxHealth(float Health)
 {
 	MaxHealth = Health;
+}
+
+void UPlayerUIWidget::OnChargeChanged(float Charge)
+{
+	ChargePercantage = FMath::Clamp(Charge, 0.0f, 1.0f);
 }

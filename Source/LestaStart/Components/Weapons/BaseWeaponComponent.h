@@ -16,36 +16,31 @@ class LESTASTART_API UBaseWeaponComponent : public UActorComponent
 public:	
 	UBaseWeaponComponent();
 
-	USceneComponent* DirectionComponent;
-	USceneComponent* GetDirectionComponent();
-	void SetDirectionComponent(USceneComponent* Component);
+	/** Event triggered every time "Ammo" is changed */
+	UPROPERTY(BlueprintAssignable, Category = "BaseWeapon")
+	FWeaponDelegateOne OnChangeAmmo;
 
-protected:
-	virtual void BeginPlay() override;
-
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+	UPROPERTY(EditAnywhere, Category = "BaseWeapon")
+	bool bInfiniteAmmo = false;
 	
-	UFUNCTION()
-	void OnRep_Ammo();
+	/** Determines the damage of the weapon */
+	UPROPERTY(EditAnywhere, Category = "BaseWeapon", meta = (ClampMin = "0.0"))
+	float BaseDamage;
 
-	UPROPERTY(Replicated, ReplicatedUsing = OnRep_Ammo)
-	float Ammo;	
+	UPROPERTY(EditAnywhere, Category = "BaseWeapon", meta = (ClampMin = "0.0"))
+	float AttackDistance;
 	
-	void ConsumeAmmo(float Amount);
-	void RestoreAmmo(float Amount);
-
-	/** React on change IsAttacking */
-	UFUNCTION()
-	virtual void OnRep_IsAttacking();
-
-	UPROPERTY(Replicated, ReplicatedUsing = OnRep_IsAttacking)
-	bool IsAttacking = false;
-
-public:	
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-
+	/** Max value of "Ammo" */
+	UPROPERTY(EditAnywhere, Category = "BaseWeapon", meta = (ClampMin = "0.0"))
+	float MaxAmmo;
+	
+	/** Time until the recharging process is completed  */
+	UPROPERTY(EditAnywhere, Category = "BaseWeapon", meta = (ClampMin = "0.0", Units = "s"))
+	float ReloadTime;
+	
+	/** Is attacking now ?  */
 	UFUNCTION(BlueprintCallable, Category = "BaseWeapon")
-	virtual bool IsAttack();
+	virtual bool IsAttack() const;
 
 	/** Call RPC to server for starting attack 
 	* @param StartLocaly - start attack locally for showing effects  */
@@ -53,34 +48,40 @@ public:
 	/** Call RPC to server for end attack
 	* @param EndLocaly - end attack locally for showing effects  */
 	virtual void EndAttack(bool EndLocaly = true);
+	/** DirectionComponent determines the direction and location of the shot */
+	void SetDirectionComponent(USceneComponent* Component);
 
+	UFUNCTION(BlueprintCallable, Category = "BaseWeapon")
+	float GetCurrentAmmo() const;
+	UFUNCTION(BlueprintCallable, Category = "BaseWeapon")
+	float GetMaxAmmo() const;
+
+	/** DirectionComponent determines the direction and location of the shot */
+	USceneComponent* GetDirectionComponent() const;
+
+	virtual void BeginPlay() override;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+protected:
 	UFUNCTION(Server, Unreliable)
 	virtual void Server_StartAttack();
 
 	UFUNCTION(Server, Unreliable)
 	virtual void Server_EndAttack();
 
-	UPROPERTY(BlueprintAssignable, Category = "BaseWeapon")
-	FWeaponDelegateOne OnChangeAmmo;
+	UFUNCTION()
+	void OnRep_Ammo();
 
-	UFUNCTION(BlueprintCallable, Category = "BaseWeapon")
-	float GetCurrentAmmo();
-	UFUNCTION(BlueprintCallable, Category = "BaseWeapon")
-	float GetMaxAmmo();
+	UPROPERTY(Replicated, ReplicatedUsing = OnRep_Ammo)
+	float Ammo;
 
-protected:
-	UPROPERTY(EditAnywhere, Category = "BaseWeapon")
-	bool bInfiniteAmmo = false;
+	void ConsumeAmmo(float Amount);
+	void RestoreAmmo(float Amount);
 
-	UPROPERTY(EditAnywhere, Category = "BaseWeapon", meta = (ClampMin = "0.0"))
-	float BaseDamage = 2.0f;
+	UPROPERTY(Replicated)
+	bool IsAttacking = false;
+	/** Determines the direction and location of the shot */
+	USceneComponent* DirectionComponent;
 
-	UPROPERTY(EditAnywhere, Category = "BaseWeapon", meta = (ClampMin = "0.0"))
-	float AttackDistance = 100.0f; 
-
-	UPROPERTY(EditAnywhere, Category = "BaseWeapon", meta = (ClampMin = "0.0"))
-	float MaxAmmo = 2.0f; 
-
-	UPROPERTY(EditAnywhere, Category = "BaseWeapon", meta = (ClampMin = "0.0", Units = "s"))
-	float ReloadTime = 1.0f;
 };

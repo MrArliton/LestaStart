@@ -33,7 +33,7 @@ void ATurretActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLife
 {
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
-	DOREPLIFETIME(ATurretActor, RotationToPlayer);
+	DOREPLIFETIME(ATurretActor, RotationTarget);
 }
 
 void ATurretActor::Tick(float DeltaTime) 
@@ -43,7 +43,7 @@ void ATurretActor::Tick(float DeltaTime)
 	// Smooth turn
 	FRotator ActorRotator = GetActorRotation();
 	float Coef = FMath::Min(1.0f, RotationSpeed * DeltaTime);
-	SetActorRotation(ActorRotator - (ActorRotator - RotationToPlayer.GetNormalized()) * Coef);
+	SetActorRotation(ActorRotator - (ActorRotator - RotationTarget.GetNormalized()) * Coef);
 }
 
 void ATurretActor::OnFoundPlayer(APawn* FoundActor)
@@ -52,7 +52,7 @@ void ATurretActor::OnFoundPlayer(APawn* FoundActor)
 	{
 		if (IsValid(FoundActor))
 		{
-			RotationToPlayer = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), FoundActor->GetActorLocation());
+			RotationTarget = UKismetMathLibrary::FindLookAtRotation(GetActorLocation(), FoundActor->GetActorLocation());
 			LaserComponent->StartAttack();
 		}
 		else

@@ -7,8 +7,8 @@ ASpawnerActor::ASpawnerActor()
 {
 	/** Disable loading on client, because spawner must only be server-side */
 	bNetLoadOnClient = false;
-
 	PrimaryActorTick.bCanEverTick = false;
+
 	SceneComponent = CreateDefaultSubobject<USceneComponent>(TEXT("RootComponent"));
 	SetRootComponent(SceneComponent);
 }
@@ -45,23 +45,16 @@ TArray<int32> ASpawnerActor::GetRandomArrayOfIndexes(int32 InMin, int32 InMax, i
 void ASpawnerActor::BeginPlay()
 {
 	Super::BeginPlay();
-	if (HasAuthority())
+
+	// Auto spawn
+	if (HasAuthority() && bOnBeginSpawn)
 	{
-		if (bOnBeginSpawn)
-		{
-			this->Spawn();
-		}
+		this->Spawn(bRandomSpawn);
 	}
 
 }
 
-void ASpawnerActor::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-}
-
-void ASpawnerActor::Spawn()
+void ASpawnerActor::Spawn(bool RandomSpawn)
 {
 	UWorld* World = GetWorld();
 	if (!World)
@@ -70,7 +63,7 @@ void ASpawnerActor::Spawn()
 		return;
 	}
 
-	if (bRandomSpawn)
+	if (RandomSpawn) // Random spawn logic
 	{
 		TArray<int32> Indexes = GetRandomArrayOfIndexes(Min, Max, SpawnPoints.Num());
 
@@ -88,7 +81,7 @@ void ASpawnerActor::Spawn()
 			}
 		}
 	}
-	else 
+	else // Spawn at all points
 	{
 		for (auto SpawnLocation : SpawnPoints)
 		{

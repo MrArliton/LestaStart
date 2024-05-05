@@ -11,6 +11,8 @@ ALestaCharacter::ALestaCharacter()
 	bReplicates = true;
 	NetUpdateFrequency = 10.f;
 	SetReplicateMovement(true);
+	// Damageable
+	SetCanBeDamaged(true);
 
 	USkeletalMeshComponent* SkeletalMesh = GetMesh();
 
@@ -52,45 +54,8 @@ void  ALestaCharacter::Tick(float DeltaTime)
 void ALestaCharacter::BeginPlay()
 {
 	Super::BeginPlay();
-
-	if (GetRemoteRole() < ROLE_Authority)
-	{
-		UWorld* World = GetWorld();
-		if (!World)
-		{
-			return;
-		}
-		// Take input component for server local player
-		UInputComponent* PlayerInputComponent = nullptr;
-		APlayerController* PlayerController = Cast<APlayerController>(GetController());
-		if (IsValid(PlayerController)) 
-		{
-			PlayerInputComponent = PlayerController->InputComponent;
-		}
-		// Spawn and attach default player weapons.
-		for (TSubclassOf<ABaseWeapon> WeaponClass : WeaponClasses)
-		{
-			if (WeaponClass.Get())
-			{
-				FTransform WeaponSocketTransform = GetMesh()->GetSocketTransform(WeaponSocketName);
-				AActor* Weapon = World->SpawnActor(WeaponClass, &WeaponSocketTransform);
-				CurrentWeapon = Cast<ABaseWeapon>(Weapon);
-				if (IsValid(CurrentWeapon))
-				{
-					Weapons.Add(CurrentWeapon);
-					CurrentWeapon->AttachWeapon(this, WeaponSocketName);
-					CurrentWeapon->SetupInputComponent(PlayerInputComponent);		
-					CurrentWeapon->Deactivate(false);
-				}
-			}
-			// Activate first weapon
-			if (!Weapons.IsEmpty())
-			{
-				CurrentWeapon = Weapons[0];
-				CurrentWeapon->Activate();
-			}
-		}
-	}
+	
+	SpawmAndAttachDefaultWeapons();
 }
 
 void ALestaCharacter::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -299,6 +264,56 @@ void ALestaCharacter::UpdateAnimationRotation()
 		BufferRotator.Pitch = RotationCorrectionValue;
 	}
 	AnimationRotation = BufferRotator;
+}
+
+void ALestaCharacter::SpawmAndAttachDefaultWeapons()
+{
+	if (HasAuthority())
+	{
+		UWorld* World = GetWorld();
+		if (!World)
+		{
+			return;
+		}
+		// Take input component for server local player
+		UInputComponent* PlayerInputComponent = nullptr;
+		APlayerController* PlayerController = Cast<APlayerController>(GetController());
+		if (IsValid(PlayerController))
+		{
+			PlayerInputComponent = PlayerController->InputComponent;
+		}
+		// Spawn and attach default player weapons.
+		for (TSubclassOf<ABaseWeapon> WeaponClass : WeaponClasses)
+		{
+			if (WeaponClass.Get())
+			{
+				FTransform WeaponSocketTransform = GetMesh()->GetSocketTransform(WeaponSocketName);
+				AActor* Weapon = World->SpawnActor(WeaponClass, &WeaponSocketTransform);
+				CurrentWeapon = Cast<ABaseWeapon>(Weapon);
+				if (IsValid(CurrentWeapon))
+				{
+					Weapons.Add(CurrentWeapon);
+					CurrentWeapon->AttachWeapon(this, WeaponSocketName);
+					CurrentWeapon->Deactivate(false);
+
+					if (PlayerInputComponent)
+					{
+						CurrentWeapon->SetupInputComponent(PlayerInputComponent);
+					}
+				}
+				else 
+				{
+					UE_LOG(LogTemp, Error, TEXT("Cannot spawn default weapon: %s, object: %s"), *WeaponClass.Get()->GetName(), *GetName())
+				}
+			}
+			// Activate first weapon
+			if (!Weapons.IsEmpty())
+			{
+				CurrentWeapon = Weapons[0];
+				CurrentWeapon->Activate();
+			}
+		}
+	}
 }
 
 //** Getters *

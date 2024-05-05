@@ -33,15 +33,11 @@ protected:
 	int32 InputMappingPriority = 0;
 
 	/** Spectator mode */
-	/** Index of observed player*/
 	int32 ObservationPlayerIndex = 0;
 
-	/** Change observer player to next */
-	UFUNCTION(Server, Unreliable)
-	void Server_OnChangeObservation();
-
-	/** Input action event - Call "Server_OnChangeObservation"  */
 	void OnChangeObservation(const FInputActionInstance& InputActionInstance);
+
+	void OnDestroyPawn();
 
 	virtual void BeginPlay() override;
 

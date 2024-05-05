@@ -21,10 +21,6 @@ class LESTASTART_API ALestaCharacter : public ACharacter
 
 public:
 	ALestaCharacter();
-
-	virtual void Tick(float DeltaTime) override;
-
-	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
 	/** Attach new weapon to character, only authority.
 	* @param DefaultDeactivated - Deactivate and hide weapon after attaching */
 	void AttachWeapon(ABaseWeapon* Weapon, bool DefaultDeactivated = true);
@@ -33,10 +29,6 @@ public:
 	FCharacterDelegateOne OnChangeWeapon;
 
 protected:
-	virtual void BeginPlay() override;
-
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
 	UPROPERTY(VisibleAnywhere)
 	TObjectPtr<UCameraComponent> CameraComponent;
 
@@ -65,34 +57,12 @@ protected:
 	UFUNCTION()
 	virtual void OnDeath();
 
+	/** Default weapons that will spawn and attach when the game start. */
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	TArray<TSubclassOf<ABaseWeapon>> WeaponClasses;
-
+	/** Socket of Character's SkeletalMesh where the weapon will be attached  */
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	FName WeaponSocketName;
-
-private:
-	UPROPERTY(Replicated)
-	int32 CurrentWeaponId = 0;
-	UPROPERTY(Replicated)
-	ABaseWeapon* CurrentWeapon;
-	
-	UFUNCTION()
-	void OnRep_Weapons();
-	UPROPERTY(Replicated, ReplicatedUsing = OnRep_Weapons)
-	TArray<ABaseWeapon*> Weapons;
-
-	UFUNCTION(Server, Unreliable)
-	void Server_ChangeWeapon(int32 NewWeaponID);
-
-	void ChangeWeapon(int32 NewWeaponID);
-	
-	/** Rotation for character animations 
-	 * "AnimationRotation" copied to server by 'server rpc', and server replicate it on other clients. */
-	UPROPERTY(Replicated)
-	FRotator AnimationRotation;
-	/** Update AnimationRotation used by animation in the character */
-	void UpdateAnimationRotation();
 
 public:	
 	/** Represents the character's life - its health */
@@ -106,9 +76,49 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Attribute")
 	ULivingAttributeComponent* GetLivingAttributeComponent();
 
+	/** Current active weapon */
 	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	ABaseWeapon* GetCurrentWeaponActor();
-
+	
+	/** Special functon for using in animation blueprints 
+	 * Return rotation for character animation */
 	UFUNCTION(BlueprintCallable, Category = "Animation")
 	FRotator GetAnimationRotation();
+
+	virtual void BeginPlay() override;
+
+	virtual void Tick(float DeltaTime) override;
+
+	virtual void SetupPlayerInputComponent(UInputComponent* PlayerInputComponent) override;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+private:
+	/** Current weapon id (index in "Weapons" array) */
+	UPROPERTY(Replicated)
+	int32 CurrentWeaponId = 0;
+
+	/** Current active weapon */
+	UPROPERTY(Replicated)
+	ABaseWeapon* CurrentWeapon;
+
+	UFUNCTION()
+	void OnRep_Weapons();
+	UPROPERTY(Replicated, ReplicatedUsing = OnRep_Weapons)
+	TArray<ABaseWeapon*> Weapons;
+
+	/** Weapon change logic functions */
+	UFUNCTION(Server, Unreliable)
+	void Server_ChangeWeapon(int32 NewWeaponID);
+	void ChangeWeapon(int32 NewWeaponID);
+
+	/** Rotation for character animations
+	 * "AnimationRotation" copied to server by 'server rpc', and server replicate it on other clients. */
+	UPROPERTY(Replicated)
+	FRotator AnimationRotation;
+	/** Update AnimationRotation used by animation in the character */
+	void UpdateAnimationRotation();
+
+	/** Create all weapons from "WeaponClasses", attach them to WeaponSocketName and hide all except first one. */
+	void SpawmAndAttachDefaultWeapons();
 };

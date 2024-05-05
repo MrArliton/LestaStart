@@ -131,8 +131,9 @@ USkeletalMeshComponent* ABaseWeapon::GetMesh()
 	return Mesh;
 }
 
-/** Override this function in inherited classes */
+// Override this function in inherited classes
 bool ABaseWeapon::IsAttacking()
 {
 	return false; 
 }
+

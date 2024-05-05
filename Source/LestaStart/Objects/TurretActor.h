@@ -22,29 +22,31 @@ class LESTASTART_API ATurretActor : public ALivingMeshActor
 public:
 	ATurretActor();
 
-	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
-
-	virtual void Tick(float DeltaTime) override;
-
-protected:
-
-	void OnFoundPlayer(APawn* FoundActor);
-	void OnNotFoundPlayers();
-private:
-
-	UPROPERTY(Replicated)
-	FRotator RotationToPlayer;
-public:
-
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	USceneComponent* LaserDirectionComponent;
-	
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
-	ULaserWeaponComponent* LaserComponent;
 
 	UPROPERTY(EditAnywhere, Category = "Weapon", meta = (ClampMin = "0.0"))
 	float RotationSpeed = 1.0f;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Finder")
 	UPlayersFinderComponent* FinderComponent;
+
+	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
+
+	virtual void Tick(float DeltaTime) override;
+
+protected:
+	/** Determines the direction and location of the shot */
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	USceneComponent* LaserDirectionComponent;
+
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	ULaserWeaponComponent* LaserComponent;
+
+	virtual void OnFoundPlayer(APawn* FoundActor);
+	virtual void OnNotFoundPlayers();
+
+private:
+	/** The rotation position of the turret to which it smoothly turns */
+	UPROPERTY(Replicated)
+	FRotator RotationTarget;
+
 };

@@ -16,34 +16,32 @@ class LESTASTART_API ALivingMeshActor : public AActor
 	GENERATED_BODY()
 	
 public:	
-	// Sets default values for this actor's properties
 	ALivingMeshActor();
 
-protected:
-	// Called when the game starts or when spawned
+	UPROPERTY(EditAnywhere)
+	UStaticMeshComponent* StaticMesh;
+	/** Health attribute */
+	UPROPERTY(Replicated, EditDefaultsOnly, Category = "Attribute")
+	ULivingAttributeComponent* LivingAttributeComponent;
+	/** Text to show health */
+	UPROPERTY(EditDefaultsOnly, Category = "Utility")
+	UHealthTextComponent* HealthTextComponent;
+
 	virtual void BeginPlay() override;
 
-	UFUNCTION()
-	virtual void OnDamagedAny(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
-	UFUNCTION()
-	virtual void OnHealthChanged(float Health);
-	UFUNCTION()
-	virtual void OnDeath();
-
-public:	
 	virtual void Tick(float DeltaTime) override;
 
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
-	UPROPERTY(EditAnywhere)
-	UStaticMeshComponent* StaticMesh;
-
-	UPROPERTY(Replicated, EditDefaultsOnly, Category = "Attribute")
-	ULivingAttributeComponent* LivingAttributeComponent;
-
-	UPROPERTY(EditDefaultsOnly, Category = "Utility")
-	UHealthTextComponent* HealthTextComponent;
-
+protected:
+	UFUNCTION()
+	virtual void OnDamagedAny(AActor* DamagedActor, float Damage, const class UDamageType* DamageType, class AController* InstigatedBy, AActor* DamageCauser);
+	/** This is caused by a change in health */
+	UFUNCTION()
+	virtual void OnHealthChanged(float Health);
+	/** Called when players health now is 0.0 */
+	UFUNCTION()
+	virtual void OnDeath();
 
 };
 

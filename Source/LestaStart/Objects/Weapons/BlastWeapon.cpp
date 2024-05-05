@@ -11,6 +11,7 @@ ABlastWeapon::ABlastWeapon()
 	BlastWeaponComponent = CreateDefaultSubobject<UBlastWeaponComponent>(TEXT("Blast Weapon"));
 	/** Set center of attack blast in the center of mesh */
 	BlastWeaponComponent->SetDirectionComponent(GetMesh());
+	BlastWeaponComponent->SetIsReplicated(true);
 }
 
 void ABlastWeapon::AttachWeapon(ALestaCharacter* Character, FName SocketName)
@@ -59,6 +60,7 @@ void ABlastWeapon::SetupInputComponent(UInputComponent* NewInputComponent)
 void ABlastWeapon::Deactivate(bool IsVisible)
 {
 	Super::Deactivate(IsVisible);
+
 	if (IsValid(BlastWeaponComponent))
 	{
 		BlastWeaponComponent->EndAttack();

@@ -8,11 +8,21 @@ UPlayersFinderComponent::UPlayersFinderComponent()
 	PrimaryComponentTick.bCanEverTick = false;
 }
 
-
 void UPlayersFinderComponent::BeginPlay()
 {
 	Super::BeginPlay();
 
+	// Add ignore owner
+	if (bTraceIgnoreOwner)
+	{
+		AActor* Owner = GetOwner();
+		if (IsValid(Owner))
+		{
+			TraceParams.AddIgnoredActor(Owner);
+		}
+	}
+
+	// Set timer
 	if (GetOwnerRole() == ROLE_Authority)
 	{
 		UWorld* World = GetWorld();
@@ -23,12 +33,11 @@ void UPlayersFinderComponent::BeginPlay()
 		}
 	}
 }
-
+// Timer function
 void UPlayersFinderComponent::OnTimerSearch()
 {
 	SearchPlayers();
 }
-
 
 const TSet<APawn*>& UPlayersFinderComponent::SearchPlayers()
 {
@@ -79,7 +88,7 @@ const TSet<APawn*>& UPlayersFinderComponent::SearchPlayers()
 					{
 						FHitResult HitResult;
 						// Trace from this owner actor to player 
-						GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, CollisionChannel.GetValue());
+						GetWorld()->LineTraceSingleByChannel(HitResult, Start, End, CollisionChannel.GetValue(), TraceParams);
 
 						AActor* HitActor = HitResult.GetActor();
 						if (IsValid(HitActor) && (Cast<AActor>(PlayerPawn) == HitActor))

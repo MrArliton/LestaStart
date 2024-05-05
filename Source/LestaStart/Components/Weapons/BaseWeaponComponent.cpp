@@ -7,6 +7,11 @@ UBaseWeaponComponent::UBaseWeaponComponent()
 	SetIsReplicatedByDefault(true);
 
 	PrimaryComponentTick.bCanEverTick = true;
+
+	BaseDamage = 2.0f;
+	AttackDistance = 100.0f;
+	MaxAmmo = 2.0f;
+	ReloadTime = 1.0f;
 }
 
 
@@ -25,13 +30,6 @@ void UBaseWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>&
 	DOREPLIFETIME(UBaseWeaponComponent, Ammo);
 	DOREPLIFETIME(UBaseWeaponComponent, IsAttacking);
 }
-
-
-void UBaseWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-}
-
 
 void UBaseWeaponComponent::OnRep_Ammo()
 {
@@ -57,11 +55,6 @@ void UBaseWeaponComponent::RestoreAmmo(float Amount)
 	OnChangeAmmo.Broadcast(Ammo);
 }
 
-void UBaseWeaponComponent::OnRep_IsAttacking()
-{
-
-}
-
 void UBaseWeaponComponent::Server_StartAttack_Implementation() 
 {
 	if (Ammo > 0.0f || bInfiniteAmmo)
@@ -75,7 +68,7 @@ void UBaseWeaponComponent::Server_EndAttack_Implementation()
 	IsAttacking = false;
 }
 
-bool UBaseWeaponComponent::IsAttack()
+bool UBaseWeaponComponent::IsAttack() const
 {
 	return IsAttacking;
 }
@@ -103,7 +96,7 @@ void UBaseWeaponComponent::EndAttack(bool EndLocaly)
 	Server_EndAttack();
 }
 
-USceneComponent* UBaseWeaponComponent::GetDirectionComponent()
+USceneComponent* UBaseWeaponComponent::GetDirectionComponent() const
 {
 	return DirectionComponent;
 }
@@ -113,11 +106,11 @@ void UBaseWeaponComponent::SetDirectionComponent(USceneComponent* Component)
 	DirectionComponent = Component;
 }
 
-float UBaseWeaponComponent::GetCurrentAmmo()
+float UBaseWeaponComponent::GetCurrentAmmo() const
 {
 	return Ammo;
 }
-float UBaseWeaponComponent::GetMaxAmmo()
+float UBaseWeaponComponent::GetMaxAmmo() const
 {
 	return MaxAmmo;
 }

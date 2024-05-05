@@ -9,8 +9,10 @@
 
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FTraceEstimatorDelegateTwo, float, Value, AActor*, HitActor);
 
-/** Create a trace and compare the distance to the actor using floating curves, otherwise just return the distance
- * Curse timeline "-1.0" - trace did not reach a actor, ">=0.0" - Hit some actor   */
+/**
+ * Create a trace and compare the distance to the actor using floating curves, otherwise just return the distance
+ * Curse timeline "-1.0" - trace did not reach a actor, ">=0.0" - Hit some actor 
+ */
 UCLASS(ClassGroup = (Custom), meta = (BlueprintSpawnableComponent))
 class LESTASTART_API UTraceEstimatorComponent : public USceneComponent
 {
@@ -19,9 +21,6 @@ class LESTASTART_API UTraceEstimatorComponent : public USceneComponent
 public:
 	UTraceEstimatorComponent();
 
-	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
-	virtual void BeginPlay() override;
-
 	/** Call trace logic */
 	float MakeTrace();
 	UFUNCTION(BlueprintCallable, Category = "Corrector")
@@ -29,15 +28,6 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Corrector")
 	AActor* GetHitActor() const;
 
-protected:
-	/** The interval between traces */
-	UPROPERTY(EditDefaultsOnly, Category = "Corrector|Trace", meta = (ClampMin = "0.0", Units = "s", EditCondition = "bAutoTrace"))
-	float TraceInterval;
-	/** Add owner to ignore list  */
-	UPROPERTY(EditDefaultsOnly, Category = "Corrector|Trace")
-	bool bTraceIgnoreOwner = true;
-
-public:
 	/** Set TraceInterval - TickInterval */
 	void SetTraceInterval(float NewTraceInterval);
 	/** Interval between traces */
@@ -68,6 +58,18 @@ public:
 	bool bUseCurve = false;
 	UPROPERTY(EditDefaultsOnly, Category = "Corrector", meta = (EditCondition = "bUseCurve"))
 	UCurveFloat* EstimationCurve;
+
+	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
+
+	virtual void BeginPlay() override;
+
+protected:
+	/** The interval between traces */
+	UPROPERTY(EditDefaultsOnly, Category = "Corrector|Trace", meta = (ClampMin = "0.0", Units = "s", EditCondition = "bAutoTrace"))
+	float TraceInterval;
+	/** Add owner to ignore list  */
+	UPROPERTY(EditDefaultsOnly, Category = "Corrector|Trace")
+	bool bTraceIgnoreOwner = true;
 
 private:
 	/** Evaluated last result */

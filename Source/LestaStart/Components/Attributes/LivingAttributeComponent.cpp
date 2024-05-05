@@ -4,29 +4,17 @@
 #include "LivingAttributeComponent.h"
 #include "Net/UnrealNetwork.h"
 
-// Sets default values for this component's properties
 ULivingAttributeComponent::ULivingAttributeComponent()
 {
 	SetIsReplicatedByDefault(false);
-	PrimaryComponentTick.bCanEverTick = true;
+	PrimaryComponentTick.bCanEverTick = false;
 }
 
-
-// Called when the game starts
 void ULivingAttributeComponent::BeginPlay()
 {
 	Super::BeginPlay();	
 
 	Health = MaxHealth;
-}
-
-
-// Called every frame
-void ULivingAttributeComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)
-{
-	Super::TickComponent(DeltaTime, TickType, ThisTickFunction);
-
-	// ...
 }
 
 void ULivingAttributeComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
@@ -39,9 +27,14 @@ void ULivingAttributeComponent::GetLifetimeReplicatedProps(TArray<FLifetimePrope
 void  ULivingAttributeComponent::OnRep_Health()
 {
 	OnChangeHealth.Broadcast(Health);
-	if (Health <= 0.0f) 
+	if (Health <= 0.0f && !IsDeath)
 	{
+		IsDeath = true;
 		OnDeath.Broadcast();
+	}
+	else
+	{
+		IsDeath = false;
 	}
 }
 

@@ -22,18 +22,22 @@ public:
 
 	virtual void SetupInputComponent(UInputComponent* NewInputComponent) override;
 
+	virtual void Deactivate(bool IsVisible = true) override;
+
 	virtual bool IsAttacking() override;
 
 protected:
 	UPROPERTY(EditAnywhere, Category = "Weapon|Input")
 	TObjectPtr<UInputAction> AttackInputAction;
 
+	/** Functions that bind to an input component */
 	virtual void OnStartAttack(const FInputActionInstance& InputActionInstance);
 	virtual void OnEndAttack(const FInputActionInstance& InputActionInstance);
 
-
+	/** Determines the direction and location of the shot */
 	UPROPERTY(EditAnywhere, Category = "Weapon")
 	USceneComponent* LaserDirectionComponent;
+
 	UPROPERTY(EditAnywhere, Category = "Weapon")
 	ULaserWeaponComponent* LaserWeaponComponent;
 };

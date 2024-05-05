@@ -7,23 +7,23 @@
 
 ALivingMeshActor::ALivingMeshActor()
 {
-	/** Replication */
+	// Replication 
 	bReplicates = true;
 	SetReplicateMovement(true);
 	NetUpdateFrequency = 20.f;
 
 	PrimaryActorTick.bCanEverTick = true;
-	/** Object is damageable */
+	// Object is damageable 
 	SetCanBeDamaged(true);
 
-	/** Not Replicated Static Mesh */
+	// Not Replicated Static Mesh 
 	StaticMesh = CreateDefaultSubobject<UStaticMeshComponent>(TEXT("StaticMesh"));
 	if (StaticMesh)
 	{
 		SetRootComponent(StaticMesh);
 	}
 
-	/** Replicated Living Attribute Component - Functional components */
+	// Replicated Living Attribute Component - Functional components
 	LivingAttributeComponent = CreateDefaultSubobject<ULivingAttributeComponent>(TEXT("LivingAttribute"));
 	if (LivingAttributeComponent)
 	{
@@ -31,7 +31,7 @@ ALivingMeshActor::ALivingMeshActor()
 		LivingAttributeComponent->OnDeath.AddDynamic(this, &ALivingMeshActor::OnDeath);
 		LivingAttributeComponent->OnChangeHealth.AddDynamic(this, &ALivingMeshActor::OnHealthChanged);
 	}
-	/** Not Replicated Health Text Component */
+	// Not Replicated Health Text Component
 	HealthTextComponent = CreateDefaultSubobject<UHealthTextComponent>(TEXT("Health Text"));
 	if (HealthTextComponent)
 	{
@@ -45,6 +45,7 @@ ALivingMeshActor::ALivingMeshActor()
 void ALivingMeshActor::BeginPlay()
 {
 	Super::BeginPlay();
+	// Set health text
 	if (IsValid(HealthTextComponent))
 	{
 		HealthTextComponent->SetHealth(LivingAttributeComponent->GetCurrentHealth());
@@ -75,7 +76,6 @@ void ALivingMeshActor::OnHealthChanged(float Health)
 		HealthTextComponent->SetHealth(Health);
 	}
 }
-
 
 void ALivingMeshActor::OnDeath()
 {

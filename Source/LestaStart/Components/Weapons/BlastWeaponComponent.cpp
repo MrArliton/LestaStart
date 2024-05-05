@@ -20,23 +20,11 @@ void UBlastWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 
 	if (IsAttacking) 
 	{
-		CurrentPower = FMath::Clamp(DeltaTime * PowerIPS + CurrentPower, 0, 1.0f);
+		AccumulationState(DeltaTime);
 	}
 	else
 	{
-		if (IsValid(DirectionComponent) && CurrentPower > 0.0f)
-		{
-			DrawDebugSphere(GetWorld(), DirectionComponent->GetComponentLocation(), AttackDistance, 20, FColor::Emerald);
-			if (GetOwnerRole() == ROLE_Authority)
-			{
-				AActor* Owner = GetOwner();
-				UGameplayStatics::ApplyRadialDamage(GetWorld(), BaseDamage * CurrentPower,
-					DirectionComponent->GetComponentLocation(),
-					AttackDistance, nullptr, IgnoredActors, Owner, nullptr, false, ECC_Pawn);
-
-			}
-			CurrentPower = 0.0f;
-		}
+		ReleaseState(DeltaTime);
 	}
 }
 
@@ -45,6 +33,35 @@ void UBlastWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	Super::GetLifetimeReplicatedProps(OutLifetimeProps);
 
 	DOREPLIFETIME(UBlastWeaponComponent, CurrentPower)
+}
+
+void UBlastWeaponComponent::AccumulationState(float DeltaTime)
+{
+	// Accumulate power
+	CurrentPower = FMath::Clamp(DeltaTime * PowerIPS + CurrentPower, 0, 1.0f);
+}
+
+void UBlastWeaponComponent::ReleaseState(float DeltaTime)
+{
+	// If have accumulated power, deal damage and demonstrate effects
+	if (IsValid(DirectionComponent) && CurrentPower > 0.0f)
+	{
+		DrawDebugSphere(GetWorld(), DirectionComponent->GetComponentLocation(), AttackDistance, 20, FColor::Emerald);
+		if (GetOwnerRole() == ROLE_Authority)
+		{
+			AActor* Owner = GetOwner();
+			UGameplayStatics::ApplyRadialDamage(GetWorld(), BaseDamage * CurrentPower,
+				DirectionComponent->GetComponentLocation(),
+				AttackDistance, nullptr, IgnoredActors, Owner, nullptr, false, ECC_Pawn);
+
+		}
+		CurrentPower = 0.0f;
+	}
+}
+
+float UBlastWeaponComponent::GetCurrentPower() const
+{
+	return CurrentPower;
 }
 
 void UBlastWeaponComponent::AddIgnoreActor(AActor* Actor)

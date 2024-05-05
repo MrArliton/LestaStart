@@ -41,5 +41,9 @@ void ALestaGameMode::OnDeathPlayer()
 
 void ALestaGameMode::RestartLevel()
 {
-	GetWorld()->ServerTravel("?Restart", false);
+	// Restart
+	if (UWorld* World = GetWorld())
+	{
+		World->ServerTravel("?Restart", false);
+	}
 }

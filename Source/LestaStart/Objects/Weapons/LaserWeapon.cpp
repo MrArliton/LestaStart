@@ -10,7 +10,7 @@
 ALaserWeapon::ALaserWeapon()
 {
 	bNetUseOwnerRelevancy = true;
-	/** Indicate the start positions of the laser by using Scene Component */
+
 	LaserDirectionComponent = CreateDefaultSubobject<USceneComponent>(TEXT("Laser Direction"));
 	LaserDirectionComponent->SetupAttachment(Mesh);
 
@@ -35,12 +35,23 @@ void ALaserWeapon::SetupInputComponent(UInputComponent* NewInputComponent)
 	}
 }
 
+void ALaserWeapon::Deactivate(bool IsVisible)
+{
+	Super::Deactivate(IsVisible);
+
+	if (IsValid(LaserWeaponComponent))
+	{
+		LaserWeaponComponent->EndAttack();
+	}
+}
+
 bool ALaserWeapon::IsAttacking()
 {
 	if (IsValid(LaserWeaponComponent)) 
 	{
 		return LaserWeaponComponent->IsAttack();
 	}
+
 	return false;
 }
 
