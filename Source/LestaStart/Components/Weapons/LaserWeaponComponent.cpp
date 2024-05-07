@@ -31,9 +31,9 @@ void ULaserWeaponComponent::BeginPlay()
 	// Don't create visual effects on dedicated server
 	if (GetNetMode() != ENetMode::NM_DedicatedServer)
 	{
-		if (LaserBeam && IsValid(DirectionComponent))
+		if (LaserBeamSystem && IsValid(DirectionComponent))
 		{
-			LaserNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(LaserBeam, DirectionComponent, NAME_None, FVector(0.f), FRotator(0.f), EAttachLocation::Type::KeepRelativeOffset, false, false);
+			LaserNiagaraComponent = UNiagaraFunctionLibrary::SpawnSystemAttached(LaserBeamSystem, DirectionComponent, NAME_None, FVector(0.f), FRotator(0.f), EAttachLocation::Type::KeepRelativeOffset, false, false);
 			if (!IsValid(LaserNiagaraComponent))
 			{
 				UE_LOG(LogTemp, Warning, TEXT("Cannot spawn LaserNiagaraComponent, object: %s"), *GetName());
@@ -81,8 +81,6 @@ void ULaserWeaponComponent::ActiveState(float DeltaTime)
 		const FVector EndPostion = StartPosition + Direction * AttackDistance;
 		// Trace 
 		World->SweepSingleByChannel(Result, StartPosition, EndPostion, FRotator::ZeroRotator.Quaternion(), ECC_Pawn, FCollisionShape::MakeSphere(TraceSphereRadius), TraceParams);
-		Multicast_Debug(StartPosition);
-		Multicast_Debug(EndPostion);
 
 		if (GetOwnerRole() == ROLE_Authority && Result.bBlockingHit)
 		{
@@ -93,25 +91,13 @@ void ULaserWeaponComponent::ActiveState(float DeltaTime)
 		if (GetNetMode() != ENetMode::NM_DedicatedServer)
 		{
 			// Laser effect
-			FVector BeamLength{ 0.0f };
-			if (IsValid(LaserNiagaraComponent))
+			if (Result.bBlockingHit)
 			{
-				if (Result.bBlockingHit)
-				{
-					BeamLength.X = Result.Distance; // Set the laser length to the distance to the object
-					LaserNiagaraComponent->SetVariableInt(FName(TEXT("SparkEnable")), 1);
-				}
-				else
-				{
-					BeamLength.X = AttackDistance; // Set the laser length to the attack distance
-					LaserNiagaraComponent->SetVariableInt(FName(TEXT("SparkEnable")), 0);
-				}
-				LaserNiagaraComponent->SetVariableVec3(FName(TEXT("BeamEnd")), BeamLength);
-
-				if (!LaserNiagaraComponent->IsActive())
-				{
-					LaserNiagaraComponent->Activate();
-				}
+				ActivateEffect(Result.Distance, Result.bBlockingHit);
+			}
+			else 
+			{
+				ActivateEffect(AttackDistance, Result.bBlockingHit);
 			}
 		}
 	}
@@ -141,10 +127,7 @@ void ULaserWeaponComponent::PendingState(float DeltaTime)
 {
 	if (GetNetMode() != ENetMode::NM_DedicatedServer)
 	{
-		if (IsValid(LaserNiagaraComponent))
-		{
-			LaserNiagaraComponent->Deactivate();
-		}
+		DeactivateEffect();
 	}
 
 	if (!IsOverheat)
@@ -153,6 +136,36 @@ void ULaserWeaponComponent::PendingState(float DeltaTime)
 	}
 }
 
+
+void ULaserWeaponComponent::ActivateEffect(float Distance, bool IsBlockingHit)
+{
+	FVector BeamLength{ 0.0f };
+	if (IsValid(LaserNiagaraComponent))
+	{
+
+		LaserNiagaraComponent->SetVariableInt(FName(TEXT("SparkEnable")), static_cast<int32>(IsBlockingHit));
+
+		BeamLength.X = Distance; // Set the laser length to the distance to the object
+
+		LaserNiagaraComponent->SetVariableVec3(FName(TEXT("BeamEnd")), BeamLength);
+
+		if (!LaserNiagaraComponent->IsActive())
+		{
+			LaserNiagaraComponent->Activate();
+		}
+	}
+}
+
+void ULaserWeaponComponent::DeactivateEffect()
+{
+	if (IsValid(LaserNiagaraComponent))
+	{
+		if (LaserNiagaraComponent->IsActive())
+		{
+			LaserNiagaraComponent->Deactivate();
+		}
+	}
+}
 
 void ULaserWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const
 {

@@ -3,6 +3,8 @@
 #include "BlastWeaponComponent.h"
 #include "Components/SceneComponent.h"
 #include "Kismet/GameplayStatics.h"
+#include "NiagaraFunctionLibrary.h"
+#include "NiagaraComponent.h"
 #include "Net/UnrealNetwork.h"
 
 UBlastWeaponComponent::UBlastWeaponComponent() : UBaseWeaponComponent()
@@ -12,6 +14,7 @@ UBlastWeaponComponent::UBlastWeaponComponent() : UBaseWeaponComponent()
 	BaseDamage = 100.0f;
 	AttackDistance = 800.0f;
 	PowerIPS = 0.1f;
+	ThresholdActivationPower = 0.2f;
 }
 
 void UBlastWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction)  
@@ -44,7 +47,7 @@ void UBlastWeaponComponent::AccumulationState(float DeltaTime)
 void UBlastWeaponComponent::ReleaseState(float DeltaTime)
 {
 	// If have accumulated power, deal damage and demonstrate effects
-	if (IsValid(DirectionComponent) && CurrentPower > 0.0f)
+	if (IsValid(DirectionComponent) && CurrentPower > ThresholdActivationPower)
 	{
 		// Damage
 		if (GetOwnerRole() == ROLE_Authority)
@@ -53,9 +56,34 @@ void UBlastWeaponComponent::ReleaseState(float DeltaTime)
 				DirectionComponent->GetComponentLocation(),
 				AttackDistance, nullptr, IgnoredActors, GetOwner(), nullptr, false, ECC_Pawn);
 		}
-		CurrentPower = 0.0f;
-		// Draw effects
-		DrawDebugSphere(GetWorld(), DirectionComponent->GetComponentLocation(), AttackDistance, 20, FColor::Emerald);
+
+		// --- Activate on server and owner client (if it's dedicated server, ActivateEffect does not create effect) 
+		// Draw effect on another clients
+		Multicast_ActivateEffect();
+		// Draw effect locally 	
+		ActivateEffect();
+	}
+
+	CurrentPower = 0.0f;
+}
+
+void UBlastWeaponComponent::Multicast_ActivateEffect_Implementation()
+{
+	// Create only on clients that have no control
+	if(GetOwnerRole() == ROLE_SimulatedProxy)
+	{
+		ActivateEffect();
+	}
+}
+
+void UBlastWeaponComponent::ActivateEffect()
+{
+	if (GetNetMode() > ENetMode::NM_DedicatedServer)
+	{
+		if (!UNiagaraFunctionLibrary::SpawnSystemAtLocation(GetWorld(), BlastSystem, DirectionComponent->GetComponentLocation(), FRotator(0.f)))
+		{
+			UE_LOG(LogTemp, Warning, TEXT("Cannot spawn blast niagara component, object: %s"), *GetName());
+		}
 	}
 }
 

@@ -21,11 +21,6 @@ class LESTASTART_API ULaserWeaponComponent : public UBaseWeaponComponent
 
 public:
 	ULaserWeaponComponent();
-
-	//** Sounds and effects *
-	UPROPERTY(EditAnywhere, Category = "Weapon")
-	UNiagaraSystem* LaserBeam;
-
 	/** Debug visualization */
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_Debug(FVector Location);
@@ -37,7 +32,11 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
-	/** Laser VFX */
+
+	/** Effects */
+	UPROPERTY(EditAnywhere, Category = "Weapon")
+	UNiagaraSystem* LaserBeamSystem;
+	/** Laser VFX component */
 	UPROPERTY();
 	UNiagaraComponent* LaserNiagaraComponent;
 
@@ -54,6 +53,11 @@ private:
 	void ActiveState(float DeltaTime);
 	/** Don't attack, disable effects and wait  */
 	void PendingState(float DeltaTime);
+
+	/** Activate laser effect */
+	void ActivateEffect(float Distance, bool IsBlockingHit);
+	/** Deactivate laser effect */
+	void DeactivateEffect();
 
 	/** Reloading flag - if out of ammo */
 	UPROPERTY(Replicated)

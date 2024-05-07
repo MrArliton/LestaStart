@@ -6,7 +6,7 @@
 #include "BaseWeaponComponent.h"
 #include "BlastWeaponComponent.generated.h"
 
-class USceneComponent;
+class UNiagaraSystem;
 /**
  * Blast weapon - Create blast in world - According chosed component location
  */
@@ -35,11 +35,24 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon", meta = (ClampMin = "0.01", ClampMax = "1.0"))
 	float PowerIPS;
 
+	/** Min power for activating blast */
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	float ThresholdActivationPower;
+
+	UPROPERTY(EditAnywhere, Category = "Weapon|Effect")
+	UNiagaraSystem* BlastSystem;
+
 private:
 	/** Accumulation of impact force */
 	void AccumulationState(float DeltaTime);
 	/** Deals damage and activates efects with accumulated power otherwise just wait */
 	void ReleaseState(float DeltaTime);
+	/** Activate effect on all clients */
+
+	UFUNCTION(NetMulticast, Unreliable)
+	void Multicast_ActivateEffect();
+	/** Activate blast effect */
+	void ActivateEffect();
 
 	/** Charge level for attack 
 	* Changes from 0.0 to 1.0  */
