@@ -8,6 +8,8 @@
 #include "LestaStart/Components/Utility/TraceEstimatorComponent.h"
 ALestaCharacter::ALestaCharacter()
 {
+	PrimaryActorTick.bCanEverTick = false;
+
 	bReplicates = true;
 	NetUpdateFrequency = 10.f;
 	SetReplicateMovement(true);
@@ -45,10 +47,6 @@ ALestaCharacter::ALestaCharacter()
 	}
 
 	this->OnTakeAnyDamage.AddDynamic(this, &ALestaCharacter::OnDamagedAny);
-}
-
-void  ALestaCharacter::Tick(float DeltaTime)
-{
 }
 
 void ALestaCharacter::BeginPlay()

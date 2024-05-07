@@ -23,6 +23,7 @@ public:
 	/** Remove an actor that will not take damage by this component */
 	void RemoveIgnoreActor(AActor* Actor);
 	/** CurrentPower changes from 0.0 to 1.0  */
+	UFUNCTION(BlueprintCallable, Category = "Weapon")
 	float GetCurrentPower() const;
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;

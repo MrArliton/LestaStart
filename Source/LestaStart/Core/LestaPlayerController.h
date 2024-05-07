@@ -43,6 +43,10 @@ protected:
 	/** Input action event - Call "Server_OnChangeObservation"  */
 	void OnChangeObservation(const FInputActionInstance& InputActionInstance);
 
+	/** If changing succesfull - return true
+	 * @Param Index - index of "PlayerController" in player controllers list  */
+	bool ChangeObservationPlayer(APlayerController* PlayerController, int32 Index);
+
 	virtual void BeginPlay() override;
 
 };

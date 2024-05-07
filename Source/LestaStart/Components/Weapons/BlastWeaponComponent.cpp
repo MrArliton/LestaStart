@@ -46,16 +46,16 @@ void UBlastWeaponComponent::ReleaseState(float DeltaTime)
 	// If have accumulated power, deal damage and demonstrate effects
 	if (IsValid(DirectionComponent) && CurrentPower > 0.0f)
 	{
-		DrawDebugSphere(GetWorld(), DirectionComponent->GetComponentLocation(), AttackDistance, 20, FColor::Emerald);
+		// Damage
 		if (GetOwnerRole() == ROLE_Authority)
 		{
-			AActor* Owner = GetOwner();
 			UGameplayStatics::ApplyRadialDamage(GetWorld(), BaseDamage * CurrentPower,
 				DirectionComponent->GetComponentLocation(),
-				AttackDistance, nullptr, IgnoredActors, Owner, nullptr, false, ECC_Pawn);
-
+				AttackDistance, nullptr, IgnoredActors, GetOwner(), nullptr, false, ECC_Pawn);
 		}
 		CurrentPower = 0.0f;
+		// Draw effects
+		DrawDebugSphere(GetWorld(), DirectionComponent->GetComponentLocation(), AttackDistance, 20, FColor::Emerald);
 	}
 }
 
