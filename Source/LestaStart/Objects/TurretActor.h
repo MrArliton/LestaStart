@@ -18,13 +18,11 @@ class LESTASTART_API ATurretActor : public ALivingMeshActor
 {
 	GENERATED_BODY()
 
-
 public:
 	ATurretActor();
 
-
 	UPROPERTY(EditAnywhere, Category = "Weapon", meta = (ClampMin = "0.0"))
-	float RotationSpeed = 1.0f;
+	float RotationSpeed;
 
 	UPROPERTY(EditDefaultsOnly, Category = "Finder")
 	UPlayersFinderComponent* FinderComponent;
@@ -38,6 +36,7 @@ protected:
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	USceneComponent* LaserDirectionComponent;
 
+	/** Weapon component - implement weapon logic, cause damage */
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	ULaserWeaponComponent* LaserComponent;
 

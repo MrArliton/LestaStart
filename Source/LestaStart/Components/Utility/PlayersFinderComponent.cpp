@@ -6,6 +6,9 @@
 UPlayersFinderComponent::UPlayersFinderComponent()
 {
 	PrimaryComponentTick.bCanEverTick = false;
+
+	SearchInterval = 0.0f;
+	SearchDistance = 1000.0f;
 }
 
 void UPlayersFinderComponent::BeginPlay()
@@ -118,4 +121,27 @@ const TSet<APawn*>& UPlayersFinderComponent::SearchPlayers()
 	}
 
 	return FoundPlayers;
+}
+
+void UPlayersFinderComponent::SetSearchInterval(float NewSearchInterval)
+{
+	if (NewSearchInterval < 0.0f)
+	{
+		UE_LOG(LogTemp, Warning, TEXT("Uncorrect search interval, it must be >= 0.0f, object: %s"), *GetName())
+		return;
+	}
+
+	if(UWorld* World = GetWorld())
+	{
+		FTimerManager& TimerManager = World->GetTimerManager();
+		TimerManager.ClearTimer(TimerHandle);
+		TimerManager.SetTimer(TimerHandle, this, &UPlayersFinderComponent::OnTimerSearch, NewSearchInterval, true);
+		
+		SearchInterval = NewSearchInterval;
+	}	
+}
+
+float UPlayersFinderComponent::GetSearchInterval() const
+{
+	return SearchInterval;
 }

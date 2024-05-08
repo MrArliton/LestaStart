@@ -27,10 +27,11 @@ public:
 	virtual bool IsAttacking() override;
 
 protected:
+	/** Input action for start attack */
 	UPROPERTY(EditAnywhere, Category = "Weapon|Input")
 	TObjectPtr<UInputAction> AttackInputAction;
 
-	/** Functions that bind to an input component */
+	/** Functions that bind to an input component with AttackInputAction */
 	virtual void OnStartAttack(const FInputActionInstance& InputActionInstance);
 	virtual void OnEndAttack(const FInputActionInstance& InputActionInstance);
 
@@ -38,6 +39,7 @@ protected:
 	UPROPERTY(EditAnywhere, Category = "Weapon")
 	USceneComponent* LaserDirectionComponent;
 
+	/** Weapon component - implement weapon logic, cause damage */
 	UPROPERTY(EditAnywhere, Category = "Weapon")
 	ULaserWeaponComponent* LaserWeaponComponent;
 };

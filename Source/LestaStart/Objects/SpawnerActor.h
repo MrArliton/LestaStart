@@ -28,10 +28,10 @@ public:
 	bool bRandomSpawn = false;
 	/** Min amount of actors spawn */
 	UPROPERTY(EditAnywhere, Category = "Spawner|RandomSpawn", meta = (ClampMin = "0", EditCondition = "bRandomSpawn"))
-	int32 Min = 1;
+	int32 Min = 0;
 	/** Max amount of actors spawn */
-	UPROPERTY(EditAnywhere, Category = "Spawner|RandomSpawn", meta = (ClampMin = "1", EditCondition = "bRandomSpawn"))
-	int32 Max = 1;
+	UPROPERTY(EditAnywhere, Category = "Spawner|RandomSpawn", meta = (ClampMin = "0", EditCondition = "bRandomSpawn"))
+	int32 Max = 0;
 
 protected:
 	UPROPERTY(EditDefaultsOnly)

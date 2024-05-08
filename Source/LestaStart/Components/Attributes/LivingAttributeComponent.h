@@ -67,6 +67,6 @@ private:
 	bool IsDeath = false;
 
 	UPROPERTY(EditAnywhere, Category = "Attribute", meta = (ClampMin = "0.1"))
-	float MaxHealth = 100.0f;
+	float MaxHealth;
 
 };

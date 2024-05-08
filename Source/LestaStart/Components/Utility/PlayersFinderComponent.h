@@ -37,12 +37,9 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Finder")
 	bool bAutoSearch = false;
 
-	/** The interval between calls to "SearchPlayers" function */
-	UPROPERTY(EditAnywhere, Category = "Finder", meta = (ClampMin = "0.0", Units = "s"))
-	float SearchInterval = 0.0f;
 	/** Max distance to the players from the owner actor */
 	UPROPERTY(EditAnywhere, Category = "Finder", meta = (ClampMin = "0.0"))
-	float SearchDistance = 1000.0f;
+	float SearchDistance;
 	/** If enabled, check using trace with "CollisionChannel" whether an actor is directly visible */
 	UPROPERTY(EditAnywhere, Category = "Finder")
 	bool bCheckDirectVisibility = true;
@@ -53,10 +50,18 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Finder", meta = (EditCondition = "bCheckDirectVisibility"))
 	TEnumAsByte<ECollisionChannel> CollisionChannel;
 
+	void SetSearchInterval(float NewSearchInterval);
+
+	float GetSearchInterval() const;
+
 protected:
-	virtual void BeginPlay() override;
+	/** The interval between calls to "SearchPlayers" function */
+	UPROPERTY(EditAnywhere, Category = "Finder", meta = (ClampMin = "0.0", Units = "s"))
+	float SearchInterval;
 
 	FCollisionQueryParams TraceParams;
+
+	virtual void BeginPlay() override;
 
 private:
 	FTimerHandle TimerHandle;

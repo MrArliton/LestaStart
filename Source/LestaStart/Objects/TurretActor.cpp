@@ -26,7 +26,9 @@ ATurretActor::ATurretActor() : ALivingMeshActor()
 	FinderComponent->OnFoundClosestPlayer.AddUObject(this, &ATurretActor::OnFoundPlayer);
 	FinderComponent->OnNotFoundPlayers.AddUObject(this, &ATurretActor::OnNotFoundPlayers);
 	FinderComponent->bAutoSearch = true;
-	FinderComponent->SearchInterval = 0.25f;
+	FinderComponent->SetSearchInterval(0.25f);
+
+	RotationSpeed = 1.0f;
 }
 
 void ATurretActor::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const

@@ -32,13 +32,15 @@ public:
 protected:
 
 	virtual void PreDetachWeapon() override;
-
+	/** Input action for start attack */
 	UPROPERTY(EditAnywhere, Category = "Weapon|Input")
 	TObjectPtr<UInputAction> AttackInputAction;
 
+	/** Functions that bind to an input component with AttackInputAction */
 	void OnStartAttack(const FInputActionInstance& InputActionInstance);
 	void OnEndAttack(const FInputActionInstance& InputActionInstance);
 
+	/** Weapon component - implement weapon logic, cause damage */
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	UBlastWeaponComponent* BlastWeaponComponent;
 };

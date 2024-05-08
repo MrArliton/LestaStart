@@ -8,6 +8,8 @@ ULivingAttributeComponent::ULivingAttributeComponent()
 {
 	SetIsReplicatedByDefault(false);
 	PrimaryComponentTick.bCanEverTick = false;
+
+	MaxHealth = 100.0f;
 }
 
 void ULivingAttributeComponent::BeginPlay()

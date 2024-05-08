@@ -17,6 +17,7 @@ ALaserWeapon::ALaserWeapon()
 	LaserWeaponComponent = CreateDefaultSubobject<ULaserWeaponComponent>(TEXT("Laser Component"));
 	LaserWeaponComponent->SetDirectionComponent(LaserDirectionComponent);
 	LaserWeaponComponent->SetIsReplicated(true);         
+
 }
 
 void ALaserWeapon::SetupInputComponent(UInputComponent* NewInputComponent)
