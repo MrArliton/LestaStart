@@ -21,7 +21,7 @@ class LESTASTART_API ABlastWeapon : public ABaseWeapon
 public:
 	ABlastWeapon();
 
-	virtual void AttachWeapon(ALestaCharacter* Character, FName SocketName) override;
+	virtual void AttachWeapon(ACharacter* Character, FName SocketName) override;
 
 	virtual void SetupInputComponent(UInputComponent* NewInputComponent) override;
 

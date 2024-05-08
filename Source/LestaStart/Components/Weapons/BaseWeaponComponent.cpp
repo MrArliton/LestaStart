@@ -1,5 +1,6 @@
 
 #include "BaseWeaponComponent.h"
+#include "LestaStart/Components/Attributes/LivingAttributeComponent.h" 
 #include "Net/UnrealNetwork.h"
 
 UBaseWeaponComponent::UBaseWeaponComponent()
@@ -113,4 +114,29 @@ float UBaseWeaponComponent::GetCurrentAmmo() const
 float UBaseWeaponComponent::GetMaxAmmo() const
 {
 	return MaxAmmo;
+}
+
+bool UBaseWeaponComponent::ApplyDamage(AActor* Target, float Damage)
+{
+	if(IsValid(Target) && Target->CanBeDamaged())
+	{
+		ULivingAttributeComponent* LivingComponent = Target->FindComponentByClass<ULivingAttributeComponent>();
+		if(LivingComponent &&
+			(bPossibleAttackTeammates || Team == ETeam::TEAM_NONE || Team != LivingComponent->GetTeam())) // Check team conditions
+		{
+			LivingComponent->Damage(Damage);
+			return true;
+		}
+	}
+	return false;
+}
+
+ETeam UBaseWeaponComponent::GetTeam() const
+{
+	return Team;
+}
+
+void UBaseWeaponComponent::ChangeTeam(ETeam NewTeam)
+{
+	Team = NewTeam;
 }

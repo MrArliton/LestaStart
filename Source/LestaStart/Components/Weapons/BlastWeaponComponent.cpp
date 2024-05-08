@@ -1,6 +1,7 @@
 // Fill out your copyright notice in the Description page of Project Settings.
 
 #include "BlastWeaponComponent.h"
+#include "LestaStart/Components/Attributes/LivingAttributeComponent.h"
 #include "Components/SceneComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
@@ -49,14 +50,11 @@ void UBlastWeaponComponent::ReleaseState(float DeltaTime)
 	// If have accumulated power, deal damage and demonstrate effects
 	if (IsValid(DirectionComponent) && CurrentPower > ThresholdActivationPower)
 	{
-		// Damage
+		// Damage on server
 		if (GetOwnerRole() == ROLE_Authority)
 		{
-			UGameplayStatics::ApplyRadialDamage(GetWorld(), BaseDamage * CurrentPower,
-				DirectionComponent->GetComponentLocation(),
-				AttackDistance, nullptr, IgnoredActors, GetOwner(), nullptr, false, ECC_Pawn);
+			ApplyRadialDamage(AttackDistance, BaseDamage * CurrentPower);
 		}
-
 		// --- Activate on server and owner client (if it's dedicated server, ActivateEffect does not create effect) 
 		// Draw effect on another clients
 		Multicast_ActivateEffect();
@@ -100,4 +98,33 @@ void UBlastWeaponComponent::AddIgnoreActor(AActor* Actor)
 void UBlastWeaponComponent::RemoveIgnoreActor(AActor* Actor)
 {
 	IgnoredActors.Remove(Actor);
+}
+
+void UBlastWeaponComponent::ApplyRadialDamage(float Radius, float Damage)
+{
+	UWorld* World = GetWorld();
+	if (World && IsValid(DirectionComponent))
+	{
+		AActor* DamageCauser = GetOwner();
+
+		FCollisionQueryParams SphereParams(SCENE_QUERY_STAT(ApplyRadialDamage), false, DamageCauser);
+
+		SphereParams.AddIgnoredActors(IgnoredActors);
+
+		// Query scene to see what we hit
+		TArray<FOverlapResult> Overlaps;
+		World->OverlapMultiByChannel(Overlaps, DirectionComponent->GetComponentLocation(), FQuat::Identity, ECC_Pawn, FCollisionShape::MakeSphere(Radius), SphereParams);
+
+		// Damage overlapped living actors
+		TMap<AActor*, TArray<FHitResult> > OverlapComponentMap;
+		for (const FOverlapResult& Overlap : Overlaps)
+		{
+			AActor* const OverlapActor = Overlap.OverlapObjectHandle.FetchActor();
+
+			if (OverlapActor && (OverlapActor != DamageCauser))
+			{
+				ApplyDamage(OverlapActor, Damage);
+			}			
+		}
+	}
 }

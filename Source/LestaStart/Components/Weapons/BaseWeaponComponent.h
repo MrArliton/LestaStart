@@ -3,6 +3,7 @@
 #pragma once
 
 #include "CoreMinimal.h"
+#include "LestaStart/Core/LestaTypes.h"
 #include "Components/ActorComponent.h"
 #include "BaseWeaponComponent.generated.h"
 
@@ -37,7 +38,11 @@ public:
 	/** Time until the recharging process is completed  */
 	UPROPERTY(EditAnywhere, Category = "BaseWeapon", meta = (ClampMin = "0.0", Units = "s"))
 	float ReloadTime;
-	
+
+	/** if disabled, damage to allies will not be ignored  */
+	UPROPERTY(EditAnywhere, Category = "BaseWeapon")
+	bool bPossibleAttackTeammates = false;
+
 	/** Is attacking now ?  */
 	UFUNCTION(BlueprintCallable, Category = "BaseWeapon")
 	virtual bool IsAttack() const;
@@ -55,7 +60,6 @@ public:
 	float GetCurrentAmmo() const;
 	UFUNCTION(BlueprintCallable, Category = "BaseWeapon")
 	float GetMaxAmmo() const;
-
 	/** DirectionComponent determines the direction and location of the shot */
 	USceneComponent* GetDirectionComponent() const;
 
@@ -64,6 +68,11 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
+	/** Assign weapon component to teams
+	 * Gives information for another actors or components, for example: friendly fire logic */
+	UPROPERTY(EditAnywhere, Category = "Attribute")
+	ETeam Team = ETeam::TEAM_NONE;
+
 	UFUNCTION(Server, Unreliable)
 	virtual void Server_StartAttack();
 
@@ -84,4 +93,12 @@ protected:
 	/** Determines the direction and location of the shot */
 	USceneComponent* DirectionComponent;
 
+	/** Apply damage, if actor has living component
+	 * Also check if actor is teammate and bPossibleAttackTeammates = false -> don't apply damage */
+	bool ApplyDamage(AActor* Target, float Damage);
+	
+	UFUNCTION(BlueprintCallable, Category = "Attribute")
+	ETeam GetTeam() const;
+
+	void ChangeTeam(ETeam NewTeam);
 };

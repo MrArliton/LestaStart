@@ -13,7 +13,6 @@ ULivingAttributeComponent::ULivingAttributeComponent()
 void ULivingAttributeComponent::BeginPlay()
 {
 	Super::BeginPlay();	
-
 	Health = MaxHealth;
 }
 
@@ -36,6 +35,11 @@ void  ULivingAttributeComponent::OnRep_Health()
 	{
 		IsDeath = false;
 	}
+}
+
+void ULivingAttributeComponent::ChangeTeam(ETeam NewTeam)
+{
+	Team = NewTeam;
 }
 
 void ULivingAttributeComponent::Heal(float Value)
@@ -71,7 +75,6 @@ void ULivingAttributeComponent::Damage(float Value)
 	}
 }
 
-
 bool ULivingAttributeComponent::IsFullHealth() const
 {
 	return Health == MaxHealth;
@@ -86,4 +89,9 @@ float ULivingAttributeComponent::GetMaxHealth()  const
 float ULivingAttributeComponent::GetCurrentHealth() const
 {
 	return Health;
+}
+
+ETeam ULivingAttributeComponent::GetTeam() const
+{
+	return Team;
 }

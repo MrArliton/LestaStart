@@ -2,6 +2,7 @@
 
 #include "LaserWeaponComponent.h"
 #include "Components/ArrowComponent.h"
+#include "LestaStart/Components/Attributes/LivingAttributeComponent.h"
 #include "Kismet/GameplayStatics.h"
 #include "NiagaraFunctionLibrary.h"
 #include "NiagaraComponent.h"
@@ -81,11 +82,11 @@ void ULaserWeaponComponent::ActiveState(float DeltaTime)
 		const FVector EndPostion = StartPosition + Direction * AttackDistance;
 		// Trace 
 		World->SweepSingleByChannel(Result, StartPosition, EndPostion, FRotator::ZeroRotator.Quaternion(), ECC_Pawn, FCollisionShape::MakeSphere(TraceSphereRadius), TraceParams);
-
+				
 		if (GetOwnerRole() == ROLE_Authority && Result.bBlockingHit)
 		{
 			const float Damage = FMath::Max(0, DeltaTime * BaseDamage * (1 - Result.Distance / AttackDistance)); // Damage depends on distance (Linear)
-			UGameplayStatics::ApplyDamage(Result.GetActor(), Damage, GetWorld()->GetFirstPlayerController(), GetOwner(), nullptr);
+			ApplyDamage(Result.GetActor(), Damage);
 		}
 		// Don't create visual effects on dedicated server
 		if (GetNetMode() != ENetMode::NM_DedicatedServer)
@@ -136,7 +137,6 @@ void ULaserWeaponComponent::PendingState(float DeltaTime)
 	}
 }
 
-
 void ULaserWeaponComponent::ActivateEffect(float Distance, bool IsBlockingHit)
 {
 	FVector BeamLength{ 0.0f };
@@ -174,14 +174,3 @@ void ULaserWeaponComponent::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>
 	DOREPLIFETIME(ULaserWeaponComponent, IsOverheat)
 }
 
-void ULaserWeaponComponent::Multicast_Debug_Implementation(FVector Location) 
-{
-	if (GetOwnerRole() == ROLE_Authority)
-	{
-		DrawDebugSphere(GetWorld(), Location, 10, 10, FColor::Red, false, 0.5f);
-	}
-	else 
-	{
-		DrawDebugSphere(GetWorld(), Location, 10, 10, FColor::Cyan, false, 0.5f);
-	}
-}

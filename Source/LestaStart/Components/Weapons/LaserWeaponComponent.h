@@ -21,9 +21,6 @@ class LESTASTART_API ULaserWeaponComponent : public UBaseWeaponComponent
 
 public:
 	ULaserWeaponComponent();
-	/** Debug visualization */
-	UFUNCTION(NetMulticast, Unreliable)
-	void Multicast_Debug(FVector Location);
 
 	virtual void BeginPlay() override;
 
@@ -58,7 +55,7 @@ private:
 	void ActivateEffect(float Distance, bool IsBlockingHit);
 	/** Deactivate laser effect */
 	void DeactivateEffect();
-
+	
 	/** Reloading flag - if out of ammo */
 	UPROPERTY(Replicated)
 	bool IsOverheat = false;

@@ -4,9 +4,9 @@
 
 #include "CoreMinimal.h"
 #include "GameFramework/Actor.h"
+#include "GameFramework/Character.h"
 #include "BaseWeapon.generated.h"
 
-class ALestaCharacter;
 class UInputMappingContext;
 
 UCLASS()
@@ -18,7 +18,7 @@ public:
 	ABaseWeapon();
 
 	/** Attach weapon to Character mesh (to socket "SocketName") */
-	virtual void AttachWeapon(ALestaCharacter* Character, FName SocketName);
+	virtual void AttachWeapon(ACharacter* Character, FName SocketName);
 
 	/** Deattach weapon from Character mesh 
 	 * "AutoDestoy" - Set destroy weapon after detach */

@@ -14,7 +14,7 @@ ABlastWeapon::ABlastWeapon()
 	BlastWeaponComponent->SetIsReplicated(true);
 }
 
-void ABlastWeapon::AttachWeapon(ALestaCharacter* Character, FName SocketName)
+void ABlastWeapon::AttachWeapon(ACharacter* Character, FName SocketName)
 {
 	Super::AttachWeapon(Character, SocketName);
 

@@ -24,7 +24,7 @@ void ALestaGameMode::PostLogin(APlayerController* NewPlayer)
 			{
 				LivingComponent->OnDeath.AddDynamic(this, &ALestaGameMode::OnDeathPlayer);
 			}
-		}
+		}		
 	}
 }
 

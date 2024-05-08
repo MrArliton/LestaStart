@@ -3,8 +3,6 @@
 #include "EnhancedInputComponent.h"
 #include "EnhancedInputSubsystems.h"
 #include "Net/UnrealNetwork.h"
-#include "LestaStart/Core/LestaCharacter.h"
-
 
 ABaseWeapon::ABaseWeapon() 
 {	
@@ -25,7 +23,7 @@ void ABaseWeapon::GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifet
 	DOREPLIFETIME(ABaseWeapon, IsActive);
 }
 
-void ABaseWeapon::AttachWeapon(ALestaCharacter* Character, FName SocketName)
+void ABaseWeapon::AttachWeapon(ACharacter* Character, FName SocketName)
 {	
 	if (!IsValid(Character))
 	{

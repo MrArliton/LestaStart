@@ -128,7 +128,7 @@ void ALestaCharacter::OnChangeWeaponInput(const FInputActionInstance& InputActio
 
 void ALestaCharacter::OnChangeWeaponNumberInput(const FInputActionInstance& InputActionInstance)
 {
-	int32 Value = static_cast<int>(InputActionInstance.GetValue().Get<float>());
+	int32 Value = static_cast<int>(InputActionInstance.GetValue().Get<float>() - 1.0f);
 	ChangeWeapon(Value);
 }
 

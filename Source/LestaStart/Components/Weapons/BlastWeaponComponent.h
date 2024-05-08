@@ -47,8 +47,8 @@ private:
 	void AccumulationState(float DeltaTime);
 	/** Deals damage and activates efects with accumulated power otherwise just wait */
 	void ReleaseState(float DeltaTime);
-	/** Activate effect on all clients */
 
+	/** Activate effect on all clients */
 	UFUNCTION(NetMulticast, Unreliable)
 	void Multicast_ActivateEffect();
 	/** Activate blast effect */
@@ -58,6 +58,10 @@ private:
 	* Changes from 0.0 to 1.0  */
 	UPROPERTY(Replicated)
 	float CurrentPower = 0.0f;
+	
 	/** An array of actors that will not take damage by this component */
 	TArray<AActor*> IgnoredActors;
+
+	/** Deals damage to surrounding actors, attack distance is determined by the sphere */
+	void ApplyRadialDamage(float Radius, float Damage);
 };
