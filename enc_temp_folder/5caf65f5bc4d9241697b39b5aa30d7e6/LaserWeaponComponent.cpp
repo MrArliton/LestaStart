@@ -59,7 +59,7 @@ void ULaserWeaponComponent::TickComponent(float DeltaTime, ELevelTick TickType, 
 
 bool ULaserWeaponComponent::PreStartAttack()
 {
-	return ThresholdActivationAmmo < Ammo;
+	return ThresholdActivationAmmo > Ammo;
 }
 
 /** Attack, activate and correct effects */

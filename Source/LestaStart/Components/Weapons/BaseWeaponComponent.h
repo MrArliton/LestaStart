@@ -47,11 +47,15 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "BaseWeapon")
 	virtual bool IsAttack() const;
 
+	/** Called by StartAttack function before call Server RPC.
+	 * If this function returns false, the attack will not start.
+	 * Can be override, without call Super. */
+	virtual bool PreStartAttack();
 	/** Call RPC to server for starting attack 
-	* @param StartLocaly - start attack locally for showing effects  */
+	 * @param StartLocaly - start attack locally for showing effects  */
 	virtual void StartAttack(bool StartLocaly = true);
 	/** Call RPC to server for end attack
-	* @param EndLocaly - end attack locally for showing effects  */
+	 * @param EndLocaly - end attack locally for showing effects  */
 	virtual void EndAttack(bool EndLocaly = true);
 	/** DirectionComponent determines the direction and location of the shot */
 	void SetDirectionComponent(USceneComponent* Component);

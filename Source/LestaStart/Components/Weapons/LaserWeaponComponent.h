@@ -22,6 +22,8 @@ class LESTASTART_API ULaserWeaponComponent : public UBaseWeaponComponent
 public:
 	ULaserWeaponComponent();
 
+	virtual bool PreStartAttack() override;
+
 	virtual void BeginPlay() override;
 
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -37,13 +39,17 @@ protected:
 	UPROPERTY();
 	UNiagaraComponent* LaserNiagaraComponent;
 
-	float TraceSphereRadius;
+	/** Consume Ammo Per Second */
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon", meta = (ClampMin = "0.0"))
+	float DischargingSpeed; 
 
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon", meta = (ClampMin = "0.0", Units = "s"))
-	float DischargingSpeed; // Consume Ammo Per Second
+	/** Restore Ammo Per Second */
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon", meta = (ClampMin = "0.0"))
+	float ChargingSpeed; 
 
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon", meta = (ClampMin = "0.0", Units = "s"))
-	float ChargingSpeed; // Restore Ammo Per Second
+	/** Min ammo for weapon activation  */
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon", meta = (ClampMin = "0.0"))
+	float ThresholdActivationAmmo;
 
 private:
 	/** Attack logic and effects logic */
@@ -64,4 +70,5 @@ private:
 	/** Params for trace */
 	FCollisionQueryParams TraceParams;
 
+	const float TraceSphereRadius = 5.0f;
 };

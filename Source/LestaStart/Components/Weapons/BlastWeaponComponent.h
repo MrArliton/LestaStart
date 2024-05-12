@@ -32,12 +32,12 @@ public:
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 protected:
-	/** Force generation rate per second, maximum power is 1.0 */
+	/** Power generation rate per second, maximum power is 1.0 */
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon", meta = (ClampMin = "0.01", ClampMax = "1.0"))
 	float PowerIPS;
 
 	/** Min power for activating blast */
-	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
+	UPROPERTY(EditDefaultsOnly, Category = "Weapon", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float ThresholdActivationPower;
 
 	UPROPERTY(EditAnywhere, Category = "Weapon|Effect")

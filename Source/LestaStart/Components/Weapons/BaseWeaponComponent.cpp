@@ -58,9 +58,12 @@ void UBaseWeaponComponent::RestoreAmmo(float Amount)
 
 void UBaseWeaponComponent::Server_StartAttack_Implementation() 
 {
-	if (Ammo > 0.0f || bInfiniteAmmo)
+	if (PreStartAttack()) // Check the child conditions
 	{
-		IsAttacking = true;
+		if (Ammo > 0.0f || bInfiniteAmmo)
+		{
+			IsAttacking = true;
+		}
 	}
 }
 
@@ -74,17 +77,25 @@ bool UBaseWeaponComponent::IsAttack() const
 	return IsAttacking;
 }
 
+bool UBaseWeaponComponent::PreStartAttack()
+{
+	return true;
+}
+
 void UBaseWeaponComponent::StartAttack(bool StartLocaly)
 {
-	/** On client start attack momentally */
-	if (StartLocaly)
+	if (PreStartAttack()) // Check the child conditions
 	{
-		if (Ammo > 0.0f || bInfiniteAmmo)
+		/** On client start attack momentally */
+		if (StartLocaly)
 		{
-			IsAttacking = true;
+			if (Ammo > 0.0f || bInfiniteAmmo)
+			{
+				IsAttacking = true;
+			}
 		}
+		Server_StartAttack();
 	}
-	Server_StartAttack();
 }
 
 void UBaseWeaponComponent::EndAttack(bool EndLocaly)

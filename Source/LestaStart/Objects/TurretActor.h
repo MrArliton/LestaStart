@@ -24,14 +24,14 @@ public:
 	UPROPERTY(EditAnywhere, Category = "Weapon", meta = (ClampMin = "0.0"))
 	float RotationSpeed;
 
-	UPROPERTY(EditDefaultsOnly, Category = "Finder")
-	UPlayersFinderComponent* FinderComponent;
-
 	virtual void GetLifetimeReplicatedProps(TArray<FLifetimeProperty>& OutLifetimeProps) const override;
 
 	virtual void Tick(float DeltaTime) override;
 
 protected:
+	/** Component search for players within a certain radius */
+	UPROPERTY(EditDefaultsOnly, Category = "Finder")
+	UPlayersFinderComponent* FinderComponent;
 	/** Determines the direction and location of the shot */
 	UPROPERTY(EditDefaultsOnly, Category = "Weapon")
 	USceneComponent* LaserDirectionComponent;
