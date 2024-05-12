@@ -18,7 +18,6 @@ class LESTASTART_API ALestaPlayerController : public APlayerController
 	GENERATED_BODY()
 
 public:
-	/** Triggered when server will restart level  */
 	UPROPERTY(BlueprintAssignable, Category = "Control")
 	FLestaControllerDelegate OnRestartLevel;
 

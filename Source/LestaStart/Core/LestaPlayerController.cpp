@@ -30,6 +30,10 @@ void ALestaPlayerController::BeginPlay()
 	}
 }
 
+void ALestaPlayerController::Multicast_LevelRestart_Implementation()
+{
+	OnRestartLevel.Broadcast();
+}
 
 void ALestaPlayerController::Server_OnChangeObservation_Implementation()
 {

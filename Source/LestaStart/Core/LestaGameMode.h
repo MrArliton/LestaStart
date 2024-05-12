@@ -26,4 +26,7 @@ public:
 	virtual void OnDeathPlayer();
 
 	void RestartLevel();	
+
+private:
+	void RestartLevelNotify(UWorld* World);
 };

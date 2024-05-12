@@ -2,6 +2,7 @@
 
 #include "LestaGameMode.h"
 #include "LestaCharacter.h"
+#include "LestaPlayerController.h"
 #include "Kismet/GameplayStatics.h"
 #include "LestaStart/Components/Attributes/LivingAttributeComponent.h"
 
@@ -44,6 +45,22 @@ void ALestaGameMode::RestartLevel()
 	// Restart
 	if (UWorld* World = GetWorld())
 	{
+		RestartLevelNotify(World); // Notify all client about restart level.
 		World->ServerTravel("?Restart", false);
+	}
+}
+
+void ALestaGameMode::RestartLevelNotify(UWorld* World)
+{
+	if (World)
+	{
+		for (FConstPlayerControllerIterator Iterator = World->GetPlayerControllerIterator(); Iterator; Iterator++)
+		{
+			ALestaPlayerController* Controller = Cast<ALestaPlayerController>(Iterator->Get());
+			if(IsValid(Controller))
+			{
+				Controller->Multicast_LevelRestart();
+			}
+		}
 	}
 }
