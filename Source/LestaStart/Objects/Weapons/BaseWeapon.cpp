@@ -42,6 +42,9 @@ void ABaseWeapon::AttachWeapon(ACharacter* Character, FName SocketName)
 
 	if (IsValid(Mesh))
 	{
+		// Save collision enabled state
+		CollisionType = Mesh->GetCollisionEnabled();
+		// Disable collision
 		Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
 	}
 }
@@ -50,7 +53,8 @@ void ABaseWeapon::PreDetachWeapon()
 {
 	if (IsValid(Mesh))
 	{
-		Mesh->SetCollisionEnabled(ECollisionEnabled::QueryAndPhysics);
+		// Restore initial collision state
+		Mesh->SetCollisionEnabled(CollisionType);
 	}
 }
 

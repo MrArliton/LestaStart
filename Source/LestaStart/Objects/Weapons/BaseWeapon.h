@@ -58,4 +58,8 @@ protected:
 	/** Use it in inherited classes to block player input. */
 	UPROPERTY(Replicated)
 	bool IsActive = false;
+
+private:
+	/** Initial collision type */
+	ECollisionEnabled::Type CollisionType;
 };
