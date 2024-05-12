@@ -7,7 +7,7 @@
 #include "InputAction.h"
 #include "LestaPlayerController.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FLestaControllerDelegate);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnRestartLevelSignature);
 
 class UInputMappingContext;
 
@@ -20,7 +20,7 @@ class LESTASTART_API ALestaPlayerController : public APlayerController
 public:
 	/** Triggered when server will restart level  */
 	UPROPERTY(BlueprintAssignable, Category = "Control")
-	FLestaControllerDelegate OnRestartLevel;
+	FOnRestartLevelSignature OnRestartLevel;
 
 	UFUNCTION(NetMulticast, Reliable)
 	void Multicast_LevelRestart();

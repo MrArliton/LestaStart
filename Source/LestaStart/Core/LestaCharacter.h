@@ -8,7 +8,7 @@
 #include "InputAction.h"
 #include "LestaCharacter.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FCharacterDelegateOne, ABaseWeapon*, NewWeapon);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnChangeWeaponSignature, ABaseWeapon*, NewWeapon);
 
 class UCameraComponent;
 class ULivingAttributeComponent;
@@ -26,7 +26,7 @@ public:
 	void AttachWeapon(ABaseWeapon* Weapon, bool DefaultDeactivated = true);
 
 	UPROPERTY(BlueprintAssignable, Category = "Weapon")
-	FCharacterDelegateOne OnChangeWeapon;
+	FOnChangeWeaponSignature OnChangeWeapon;
 
 protected:
 	UPROPERTY(VisibleAnywhere)

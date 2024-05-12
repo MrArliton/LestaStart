@@ -23,10 +23,11 @@ public:
 	virtual void PostLogin(APlayerController* NewPlayer);
 
 	UFUNCTION()
-	virtual void OnDeathPlayer();
-
+	virtual void OnDeathPlayer(AActor* PlayerActor, EEndPlayReason::Type EndType);
+	
 	void RestartLevel();	
 
 private:
+	/** Notify all clients about restart level */
 	void RestartLevelNotify(UWorld* World);
 };

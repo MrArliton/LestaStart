@@ -6,8 +6,8 @@
 #include "Components/ActorComponent.h"
 #include "PlayersFinderComponent.generated.h"
 
-DECLARE_MULTICAST_DELEGATE_OneParam(FFindDelegateOne, APawn*);
-DECLARE_MULTICAST_DELEGATE(FFindDelegate);
+DECLARE_MULTICAST_DELEGATE_OneParam(FOnFindSignature, APawn*);
+DECLARE_MULTICAST_DELEGATE(FOnNotFindSignature);
 
 
 /**
@@ -27,11 +27,11 @@ public:
 
 	/** If "SearchPlayers" have found the player call this event.
 	 * Called several times if many players are found */
-	FFindDelegateOne OnFoundPlayer;
+	FOnFindSignature OnFoundPlayer;
 	/** If "SearchPlayers" have found the players, this event is triggered for the player actor closest to the owners */
-	FFindDelegateOne OnFoundClosestPlayer;
+	FOnFindSignature OnFoundClosestPlayer;
 	/** If "SearchPlayers" did not find the players */
-	FFindDelegate OnNotFoundPlayers;
+	FOnNotFindSignature OnNotFoundPlayers;
 
 	/** Activates constant search, it cannot be disabled */
 	UPROPERTY(EditAnywhere, Category = "Finder")

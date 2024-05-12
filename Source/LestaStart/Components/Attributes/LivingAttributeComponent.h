@@ -6,8 +6,8 @@
 #include "Components/ActorComponent.h"
 #include "LivingAttributeComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDeathDelegate);
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHealthDelegateOne, float, Health);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FDeathSignature);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FHealthChangedSignature, float, Health);
 /**
  * Represents the life attribute of an actor
  * Also determines the player's team
@@ -22,10 +22,10 @@ public:
 
 	/** The event is triggered when health = 0.0 */
 	UPROPERTY(BlueprintAssignable, Category = "Attribute")
-	FDeathDelegate OnDeath;
+	FDeathSignature OnDeath;
 	/** The event is triggered whenever health changes. */
 	UPROPERTY(BlueprintAssignable, Category = "Attribute")
-	FHealthDelegateOne OnChangeHealth;
+	FHealthChangedSignature OnChangeHealth;
 
 public:	
 	void ChangeTeam(ETeam NewTeam);

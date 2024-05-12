@@ -7,7 +7,7 @@
 #include "Components/ActorComponent.h"
 #include "BaseWeaponComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FWeaponDelegateOne, float, Ammo);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FWeaponChangeAmmoSignature, float, Ammo);
 
 UCLASS( ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class LESTASTART_API UBaseWeaponComponent : public UActorComponent
@@ -19,7 +19,7 @@ public:
 
 	/** Event triggered every time "Ammo" is changed */
 	UPROPERTY(BlueprintAssignable, Category = "BaseWeapon")
-	FWeaponDelegateOne OnChangeAmmo;
+	FWeaponChangeAmmoSignature OnChangeAmmo;
 
 	UPROPERTY(EditAnywhere, Category = "BaseWeapon")
 	bool bInfiniteAmmo = false;

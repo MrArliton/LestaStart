@@ -18,18 +18,17 @@ void ALestaGameMode::PostLogin(APlayerController* NewPlayer)
 	if (IsValid(NewPlayer->GetPawn()))
 	{
 		NumberOfLivePlayers++;
-		if (ALestaCharacter* Character = Cast<ALestaCharacter>(NewPlayer->GetPawn()))
+		if (APawn* PlayerPawn = NewPlayer->GetPawn())
 		{
-			ULivingAttributeComponent* LivingComponent = Character->GetLivingAttributeComponent();
-			if (IsValid(LivingComponent))
+			if (IsValid(PlayerPawn))
 			{
-				LivingComponent->OnDeath.AddDynamic(this, &ALestaGameMode::OnDeathPlayer);
+				PlayerPawn->OnEndPlay.AddDynamic(this, &ALestaGameMode::OnDeathPlayer);
 			}
 		}		
 	}
 }
 
-void ALestaGameMode::OnDeathPlayer()
+void ALestaGameMode::OnDeathPlayer(AActor* PlayerActor, EEndPlayReason::Type EndType)
 {
 	NumberOfLivePlayers--;
 	// If all players death - restart level
@@ -42,10 +41,10 @@ void ALestaGameMode::OnDeathPlayer()
 
 void ALestaGameMode::RestartLevel()
 {
-	// Restart
 	if (UWorld* World = GetWorld())
 	{
 		RestartLevelNotify(World); // Notify all client about restart level.
+		// Restart
 		World->ServerTravel("?Restart", false);
 	}
 }

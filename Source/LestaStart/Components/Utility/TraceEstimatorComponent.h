@@ -7,7 +7,7 @@
 #include "Curves/CurveFloat.h"
 #include "TraceEstimatorComponent.generated.h"
 
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FTraceEstimatorDelegateTwo, float, Value, AActor*, HitActor);
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FTraceEstimatorSignature, float, Value, AActor*, HitActor);
 
 /**
  * Create a trace and compare the distance to the actor using floating curves, otherwise just return the distance
@@ -35,7 +35,7 @@ public:
 
 	/** The delegate is called every trace  */
 	UPROPERTY(BlueprintAssignable, Category = "Corrector")
-	FTraceEstimatorDelegateTwo OnEstimateTrace;
+	FTraceEstimatorSignature OnEstimateTrace;
 
 	/** If AutoTrace enabled - call "OnTrace" delegate and update "EstimatedValue" */
 	UPROPERTY(EditDefaultsOnly, Category = "Corrector")
