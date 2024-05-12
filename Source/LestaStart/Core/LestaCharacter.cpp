@@ -145,6 +145,7 @@ void ALestaCharacter::OnDeath()
 		{
 			if (IsValid(Weapon))
 			{
+				// Detach and destroy weapon
 				Weapon->DetachWeapon(true);
 			}
 		}

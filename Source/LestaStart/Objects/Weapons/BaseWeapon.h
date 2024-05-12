@@ -21,8 +21,8 @@ public:
 	virtual void AttachWeapon(ACharacter* Character, FName SocketName);
 
 	/** Deattach weapon from Character mesh 
-	 * "AutoDestoy" - Set destroy weapon after detach */
-	virtual void DetachWeapon(bool AutoDestoy = false);	
+	 * @param AutoDestoy - Destroy weapon after detach */
+	virtual void DetachWeapon(bool AutoDestroy = false);	
 
 	/** Assign key bindings for weapon to new input component (clear old input component automatically) */
 	virtual void SetupInputComponent(UInputComponent* NewInputComponent);

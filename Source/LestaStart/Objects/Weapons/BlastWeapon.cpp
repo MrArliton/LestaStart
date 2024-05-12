@@ -27,7 +27,12 @@ void ABlastWeapon::AttachWeapon(ACharacter* Character, FName SocketName)
 	if (IsValid(BlastWeaponComponent))
 	{
 		BlastWeaponComponent->AddIgnoreActor(Character);
-	}	
+	}
+
+	if(IsValid(Mesh))
+	{
+		Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
+	}
 } 
 
 void ABlastWeapon::PreDetachWeapon()

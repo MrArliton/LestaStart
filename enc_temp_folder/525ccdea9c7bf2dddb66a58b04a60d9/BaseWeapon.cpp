@@ -39,11 +39,6 @@ void ABaseWeapon::AttachWeapon(ACharacter* Character, FName SocketName)
 		FAttachmentTransformRules AttachmentTransformRules(EAttachmentRule::SnapToTarget, true);
 		this->AttachToComponent(Character->GetMesh(), AttachmentTransformRules, SocketName);
 	}
-
-	if (IsValid(Mesh))
-	{
-		Mesh->SetCollisionEnabled(ECollisionEnabled::NoCollision);
-	}
 }
 
 void ABaseWeapon::PreDetachWeapon()
