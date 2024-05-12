@@ -45,7 +45,8 @@ void ATurretActor::Tick(float DeltaTime)
 	// Smooth turn
 	FRotator ActorRotator = GetActorRotation();
 	float Coef = FMath::Min(1.0f, RotationSpeed * DeltaTime);
-	SetActorRotation(ActorRotator - (ActorRotator - RotationTarget.GetNormalized()) * Coef);
+	FRotator TargetRotator = FMath::Lerp(ActorRotator,RotationTarget,Coef);
+	SetActorRotation(TargetRotator);
 }
 
 void ATurretActor::OnFoundPlayer(APawn* FoundActor)
